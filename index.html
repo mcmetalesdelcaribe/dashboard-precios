@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MC Metales del Caribe — Precios</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; color: #1a1a1a; }
+    header { background: #1a1a1a; color: #FFD700; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 18px; }
+    header p { font-size: 12px; color: #aaa; margin-top: 2px; }
+    .badge { font-size: 11px; padding: 4px 12px; border-radius: 999px; font-weight: bold; }
+    .live { background: #2d6a2d; color: #90ee90; }
+    .err  { background: #6a2d2d; color: #ffaaaa; }
+    .load { background: #444; color: #ccc; }
+    .man  { background: #6a5a2d; color: #ffd700; }
+    main { max-width: 960px; margin: 1.5rem auto; padding: 0 1rem; }
+    .grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 1.5rem; }
+    .card { background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .card label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px; }
+    .card .big { font-size: 24px; font-weight: bold; color: #1a1a1a; }
+    .card .sub { font-size: 10px; color: #aaa; margin-top: 3px; }
+    .card input { width: 100%; border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; font-size: 14px; margin-top: 8px; }
+    .delta { display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 999px; margin-left: 6px; }
+    .up { background: #e6f4e6; color: #2d6a2d; }
+    .dn { background: #f4e6e6; color: #6a2d2d; }
+    .sec { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin: 1.5rem 0 0.75rem; }
+    .vgrid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1.5rem; }
+    .vc { background: #fff; border-radius: 8px; padding: 0.75rem 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .vc .vl { font-size: 10px; color: #888; text-transform: uppercase; }
+    .vc .vv { font-size: 16px; font-weight: bold; color: #1a1a1a; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    th { background: #1a1a1a; color: #FFD700; font-size: 11px; padding: 10px 12px; text-align: right; }
+    th:first-child { text-align: left; }
+    td { padding: 7px 12px; text-align: right; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+    td:first-child { text-align: left; font-weight: bold; color: #555; }
+    tr:hover td { background: #fafafa; }
+    tr.hl td { background: #f0faf0; }
+    tr.hl td:first-child { color: #2d6a2d; }
+    .actions { display: flex; gap: 10px; margin-top: 1.5rem; flex-wrap: wrap; }
+    .btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; font-weight: bold; }
+    .btn-gold { background: #FFD700; color: #1a1a1a; }
+    .btn-dark { background: #1a1a1a; color: #FFD700; }
+    .btn:hover { opacity: 0.85; }
+    .sbar { font-size: 11px; color: #aaa; margin-top: 1rem; text-align: right; padding-bottom: 2rem; }
+    @media(max-width:600px) { .grid3,.vgrid { grid-template-columns: 1fr 1fr; } th,td { font-size: 11px; padding: 6px 8px; } }
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>MC Metales del Caribe</h1>
+    <p id="fecha"></p>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="badge load" id="badge">Cargando...</span>
+    <button class="btn btn-gold" onclick="fetchAll()">Actualizar</button>
+  </div>
+</header>
+<main>
+  <div class="grid3">
+    <div class="card">
+      <label>Onza troy Bid — Kitco (USD)</label>
+      <div><span class="big" id="onza-v">—</span><span class="delta" id="onza-d"></span></div>
+      <div class="sub" id="onza-src">Consultando...</div>
+      <input type="number" id="onza-i" placeholder="Ingresar manualmente" step="0.1" oninput="manual('o')">
+    </div>
+    <div class="card">
+      <label>Dólar Compra — Banco de Bogotá (COP)</label>
+      <div><span class="big" id="dolar-v">—</span><span class="delta" id="dolar-d"></span></div>
+      <div class="sub" id="dolar-src">Consultando...</div>
+      <input type="number" id="dolar-i" placeholder="Ingresar manualmente" step="1" oninput="manual('d')">
+    </div>
+    <div class="card">
+      <label>Regalías del mes (COP/g)</label>
+      <span class="big" id="reg-v">—</span>
+      <div class="sub">Actualizar al inicio de cada mes</div>
+      <input type="number" id="reg-i" value="18965.39" step="0.01" oninput="manual('r')">
+    </div>
+  </div>
+
+  <div class="sec">Vitrina 94.5% — Precios de compra por categoría</div>
+  <div class="vgrid" id="vgrid"></div>
+
+  <div class="sec">Tabla completa — ORO descontado regalías + retefuente</div>
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Ley</th>
+          <th>Internacional (COP/g)</th>
+          <th>Base bruta</th>
+          <th>Retefuente</th>
+          <th>Base Puro neto</th>
+          <th>Italiano (×0.74)</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-dark" onclick="exportExcel()">Exportar Excel</button>
+    <button class="btn btn-gold" onclick="fetchAll()">Refrescar precios</button>
+    <button class="btn btn-dark" onclick="copiar()">Copiar precios</button>
+  </div>
+  <div class="sbar" id="sbar">Iniciando...</div>
+</main>
+
+<script>
+const API_ONZA  = 'https://mc-metales-precios.azurewebsites.net/api/onza';
+const API_DOLAR = 'https://mc-metales-precios.azurewebsites.net/api/dolar';
+const TROY=31.1035, ITAL=0.74;
+const LEYES=[
+  {l:'97%',  f:.970,r:.025},{l:'96%',  f:.960,r:.025},{l:'95%',  f:.950,r:.025},
+  {l:'94.5%',f:.945,r:.025,hl:true},
+  {l:'94%',  f:.940,r:.025},{l:'93.5%',f:.935,r:.025},{l:'93%',  f:.930,r:.025},
+  {l:'92%',  f:.920,r:.025},{l:'91.5%',f:.915,r:.025},{l:'91%',  f:.910,r:.025},
+  {l:'90.5%',f:.905,r:.025},{l:'90%',  f:.900,r:.025},
+  {l:'88%',  f:.880,r:.010},{l:'86%',  f:.860,r:.010},
+  {l:'84%',  f:.840,r:.010},{l:'82%',  f:.820,r:.010},
+];
+const VIT=[
+  {n:'Puro',            k:1},
+  {n:'Monedas (880)',   k:.880/.945},
+  {n:'Italiano (740)',  k:.740/.945},
+  {n:'Nacional (690)',  k:.690/.945},
+  {n:'Nacional (650)',  k:.650/.945},
+  {n:'14 Kilates (560)',k:.560/.945},
+  {n:'Tubular (500)',   k:.500/.945},
+  {n:'Bajos (360)',     k:.360/.945},
+];
+let prev={o:null,d:null}, cur={o:null,d:null,r:18965.39};
+const fmt=n=>Math.round(n).toLocaleString('es-CO');
+const fmtU=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function setBadge(t,c){const b=document.getElementById('badge');b.textContent=t;b.className='badge '+c;}
+function setSbar(t){document.getElementById('sbar').textContent=t;}
+function setDelta(id,nv,ov,usd){
+  const el=document.getElementById(id);
+  if(ov===null||nv===ov){el.textContent='';return;}
+  const d=nv-ov;
+  el.className='delta '+(d>0?'up':'dn');
+  el.textContent=(d>0?'+':'')+(usd?fmtU(d):fmt(d));
+}
+
+async function fetchAll(){
+  setBadge('Cargando...','load');
+  const po=cur.o, pd=cur.d;
+  const [rO,rD]=await Promise.allSettled([
+    fetch(API_ONZA).then(r=>r.json()),
+    fetch(API_DOLAR).then(r=>r.json())
+  ]);
+  let okO=false,okD=false;
+  if(rO.status==='fulfilled'&&rO.value.bid){
+    cur.o=rO.value.bid;
+    document.getElementById('onza-v').textContent='$ '+fmtU(cur.o);
+    document.getElementById('onza-i').value=cur.o.toFixed(2);
+    document.getElementById('onza-src').textContent='Kitco spot Bid — actualizado';
+    setDelta('onza-d',cur.o,po,true);
+    okO=true;
+  } else {
+    document.getElementById('onza-src').textContent='Sin acceso — ingresa manualmente';
+  }
+  if(rD.status==='fulfilled'&&rD.value.compra){
+    cur.d=rD.value.compra;
+    document.getElementById('dolar-v').textContent='$ '+fmt(cur.d);
+    document.getElementById('dolar-i').value=cur.d.toFixed(2);
+    document.getElementById('dolar-src').textContent=`Banco de Bogotá — Compra ${rD.value.hora}`;
+    setDelta('dolar-d',cur.d,pd,false);
+    okD=true;
+  } else {
+    document.getElementById('dolar-src').textContent='Sin acceso — ingresa manualmente';
+  }
+  const r=parseFloat(document.getElementById('reg-i').value)||18965.39;
+  cur.r=r;
+  document.getElementById('reg-v').textContent='$ '+fmt(r);
+  if(okO&&okD) setBadge('En vivo','live');
+  else if(okO||okD) setBadge('Parcial','man');
+  else setBadge('Sin conexión','err');
+  if(cur.o&&cur.d) render();
+  setSbar(`Actualizado: ${new Date().toLocaleString('es-CO')} · Refresco automático cada 5 min`);
+}
+
+function render(){
+  const {o,d,r}=cur;
+  const intl=(o*d)/TROY;
+  const tb=document.getElementById('tbody');
+  tb.innerHTML='';
+  LEYES.forEach(l=>{
+    const base=intl*l.f,rete=base*l.r,neto=base-rete-r,ital=neto*ITAL;
+    const tr=document.createElement('tr');
+    if(l.hl) tr.className='hl';
+    tr.innerHTML=`<td>${l.l}</td><td>$ ${fmt(intl)}</td><td>$ ${fmt(base)}</td><td>$ ${fmt(rete)}</td><td>$ ${fmt(neto)}</td><td>$ ${fmt(ital)}</td>`;
+    tb.appendChild(tr);
+  });
+  const ref=(intl*.945)-(intl*.945*.025)-r;
+  const vg=document.getElementById('vgrid');
+  vg.innerHTML='';
+  VIT.forEach(v=>{
+    const c=document.createElement('div');
+    c.className='vc';
+    c.innerHTML=`<div class="vl">${v.n}</div><div class="vv">$ ${fmt(ref*v.k)}</div>`;
+    vg.appendChild(c);
+  });
+}
+
+function manual(w){
+  const o=parseFloat(document.getElementById('onza-i').value);
+  const d=parseFloat(document.getElementById('dolar-i').value);
+  const r=parseFloat(document.getElementById('reg-i').value);
+  if(o&&w==='o'){cur.o=o;document.getElementById('onza-v').textContent='$ '+fmtU(o);}
+  if(d&&w==='d'){cur.d=d;document.getElementById('dolar-v').textContent='$ '+fmt(d);}
+  if(r&&w==='r'){cur.r=r;document.getElementById('reg-v').textContent='$ '+fmt(r);}
+  if(cur.o&&cur.d) render();
+  setBadge('Manual','man');
+}
+
+function exportExcel(){
+  const {o,d,r}=cur;
+  if(!o||!d){alert('Primero carga los precios.');return;}
+  const intl=(o*d)/TROY;
+  const rows=[
+    ['MC Metales del Caribe','','','','',''],
+    ['Fecha:',new Date().toLocaleString('es-CO'),'','','',''],
+    ['Onza Bid USD:',fmtU(o),'','Dólar Compra COP:',fmt(d),''],
+    ['Regalías COP/g:',fmt(r),'','Internacional COP/g:',fmt(intl),''],
+    [],
+    ['Ley','Internacional','Base bruta','Retefuente','Base Puro neto','Italiano'],
+  ];
+  LEYES.forEach(l=>{
+    const base=intl*l.f,rete=base*l.r,neto=base-rete-r;
+    rows.push([l.l,Math.round(intl),Math.round(base),Math.round(rete),Math.round(neto),Math.round(neto*ITAL)]);
+  });
+  rows.push([],['Vitrina 94.5%','COP/g']);
+  const ref=(intl*.945)-(intl*.945*.025)-r;
+  VIT.forEach(v=>rows.push([v.n,Math.round(ref*v.k)]));
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:18},{wch:16},{wch:14},{wch:14},{wch:18},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws,'Precios MC Metales');
+  XLSX.writeFile(wb,`MC_Metales_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function copiar(){
+  const {o,d,r}=cur;
+  if(!o||!d) return;
+  const intl=(o*d)/TROY;
+  const ref=(intl*.945)-(intl*.945*.025)-r;
+  let txt=`MC Metales del Caribe — ${new Date().toLocaleString('es-CO')}\nOnza Bid: $ ${fmtU(o)} USD | Dólar compra: $ ${fmt(d)} COP\nInternacional: $ ${fmt(intl)}/g\n\nVITRINA 94.5%:\n`;
+  VIT.forEach(v=>{txt+=`  ${v.n}: $ ${fmt(ref*v.k)}\n`;});
+  navigator.clipboard.writeText(txt).then(()=>setSbar('Precios copiados al portapapeles.'));
+}
+
+document.getElementById('fecha').textContent=
+  new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+fetchAll();
+setInterval(fetchAll,5*60*1000);
+</script>
+</body>
+</html>
