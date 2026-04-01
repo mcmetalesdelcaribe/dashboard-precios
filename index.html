@@ -592,7 +592,7 @@ async function fetchAll(){
   else if(okO||okD) setBadge('Parcial','man');
   else setBadge('Sin conexión','err');
   if(cur.o&&cur.d) render();
-  setSbar(`Actualizado: ${new Date().toLocaleString('es-CO')} · Refresco automático cada 5 min`);
+  setSbar(`Actualizado: ${new Date().toLocaleString('es-CO')} · Refresco automático cada 1 min`);
 }
 
 function renderVitrina(l){
@@ -736,8 +736,8 @@ function initApp(){
   document.getElementById('fecha').textContent=
     new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   fetchAll();
-  setInterval(fetchAll,5*60*1000);
-  setInterval(guardarPrecios,30*60*1000);
+  setInterval(fetchAll,60*1000);
+  setInterval(guardarPrecios,5*60*1000);
 }
 
 // Al cargar: verificar sesión existente
