@@ -51,7 +51,7 @@
     tr.selected td:first-child { color: #1a1a1a !important; }
     .hist-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 0.5rem; }
     .hist-table th { background: #1a1a1a; color: #FFD700; padding: 8px 10px; text-align: left; font-size: 11px; }
-    .hist-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; text-align: left; }
+    .hist-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; text-align: left; cursor: default; }
     .hist-table tr:hover td { background: #fafafa; }
     .actions { display: flex; gap: 10px; margin-top: 1.5rem; flex-wrap: wrap; }
     .btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; font-weight: bold; }
@@ -116,8 +116,11 @@
   </div>
   <div class="vgrid" id="vgrid"></div>
 
-  <div class="sec">Tabla completa — toca una ley para ver sus precios arriba</div>
-  <div style="overflow-x:auto;">
+  <div class="sec-row">
+    <div class="sec">Tabla completa — toca una ley para ver sus precios arriba</div>
+    <button class="btn btn-dark btn-sm" id="btn-tabla" onclick="verTabla()">Ver tabla</button>
+  </div>
+  <div id="tabla-container" style="display:none;overflow-x:auto;">
     <table>
       <thead>
         <tr>
@@ -135,7 +138,7 @@
 
   <div class="sec-row" style="margin-top:2rem;">
     <div class="sec">Historial de precios — últimos 15 días</div>
-    <button class="btn btn-dark btn-sm" onclick="verHistorial()">Ver historial</button>
+    <button class="btn btn-dark btn-sm" id="btn-historial" onclick="verHistorial()">Ver historial</button>
   </div>
   <div id="historial-container" style="display:none;">
     <div style="overflow-x:auto;">
@@ -188,7 +191,7 @@ const VIT=[
 ];
 let prev={o:null,d:null}, cur={o:null,d:null,r:18965.39};
 let leySeleccionada=LEYES[3];
-let historialVisible=false;
+let tablaVisible=false, historialVisible=false;
 const fmt=n=>Math.round(n).toLocaleString('es-CO');
 const fmtU=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
@@ -202,19 +205,21 @@ function setDelta(id,nv,ov,usd){
   el.textContent=(d>0?'+':'')+(usd?fmtU(d):fmt(d));
 }
 
+function verTabla(){
+  tablaVisible=!tablaVisible;
+  document.getElementById('tabla-container').style.display=tablaVisible?'block':'none';
+  document.getElementById('btn-tabla').textContent=tablaVisible?'Ocultar tabla':'Ver tabla';
+}
+
 function mostrarComparativa(precioAyer){
   if(!precioAyer) return;
-  // Onza
   const co=document.getElementById('comp-onza');
   co.style.display='block';
   document.getElementById('comp-onza-val').textContent='$ '+fmtU(precioAyer.onza);
-  const do_=precioAyer.onza;
-  const diffO=cur.o-do_;
+  const diffO=cur.o-precioAyer.onza;
   const elO=document.getElementById('comp-onza-delta');
   elO.className='comp-delta '+(diffO>0?'up':'dn');
   elO.textContent=(diffO>0?'SUBIÓ ▲':'BAJÓ ▼')+' '+fmtU(Math.abs(diffO));
-
-  // Dólar
   const cd=document.getElementById('comp-dolar');
   cd.style.display='block';
   document.getElementById('comp-dolar-val').textContent='$ '+fmt(precioAyer.dolar);
@@ -238,8 +243,10 @@ async function guardarPrecios(){
 async function verHistorial(){
   historialVisible=!historialVisible;
   const container=document.getElementById('historial-container');
-  if(!historialVisible){ container.style.display='none'; return; }
+  const btn=document.getElementById('btn-historial');
+  if(!historialVisible){ container.style.display='none'; btn.textContent='Ver historial'; return; }
   container.style.display='block';
+  btn.textContent='Ocultar historial';
   const tbody=document.getElementById('hist-tbody');
   tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">Cargando...</td></tr>';
   try {
@@ -247,7 +254,7 @@ async function verHistorial(){
     const data=await res.json();
     tbody.innerHTML='';
     if(!data.registros||data.registros.length===0){
-      tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">Sin registros aún</td></tr>';
+      tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">Sin registros aún — el primer registro aparece en 30 minutos</td></tr>';
       return;
     }
     data.registros.forEach(r=>{
@@ -340,6 +347,7 @@ function render(){
       document.querySelectorAll('#tbody tr').forEach(t=>t.classList.remove('selected'));
       tr.classList.add('selected');
       renderVitrina(l);
+      if(!tablaVisible){ verTabla(); }
     });
     tb.appendChild(tr);
   });
