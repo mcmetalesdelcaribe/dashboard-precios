@@ -191,11 +191,38 @@ function render(){
   tb.innerHTML='';
   LEYES.forEach(l=>{
     const base=intl*l.f,rete=base*l.r,neto=base-rete-r,ital=neto*ITAL;
-    const tr=document.createElement('tr');
-    if(l.hl) tr.className='hl';
-    tr.innerHTML=`<td>${l.l}</td><td>$ ${fmt(intl)}</td><td>$ ${fmt(base)}</td><td>$ ${fmt(rete)}</td><td>$ ${fmt(neto)}</td><td>$ ${fmt(ital)}</td>`;
-    tb.appendChild(tr);
+    const trHead=document.createElement('tr');
+    if(l.hl) trHead.className='hl';
+    trHead.style.cursor='pointer';
+    trHead.innerHTML=`
+      <td>${l.l} <span style="font-size:10px;color:#aaa;">▼</span></td>
+      <td>$ ${fmt(intl)}</td>
+      <td>$ ${fmt(base)}</td>
+      <td>$ ${fmt(rete)}</td>
+      <td>$ ${fmt(neto)}</td>
+      <td>$ ${fmt(ital)}</td>
+    `;
+    const trDetail=document.createElement('tr');
+    trDetail.style.display='none';
+    trDetail.innerHTML=`
+      <td colspan="6" style="background:#f9f9f9;padding:12px 20px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+          <div><div style="font-size:10px;color:#888;text-transform:uppercase;">Base Puro neto</div><div style="font-size:16px;font-weight:bold;">$ ${fmt(neto)}</div></div>
+          <div><div style="font-size:10px;color:#888;text-transform:uppercase;">Italiano (×0.74)</div><div style="font-size:16px;font-weight:bold;">$ ${fmt(ital)}</div></div>
+          <div><div style="font-size:10px;color:#888;text-transform:uppercase;">Retefuente</div><div style="font-size:16px;font-weight:bold;">$ ${fmt(rete)}</div></div>
+          <div><div style="font-size:10px;color:#888;text-transform:uppercase;">Base bruta</div><div style="font-size:16px;font-weight:bold;">$ ${fmt(base)}</div></div>
+        </div>
+      </td>
+    `;
+    trHead.addEventListener('click',()=>{
+      const visible=trDetail.style.display!=='none';
+      trDetail.style.display=visible?'none':'table-row';
+      trHead.querySelector('span').textContent=visible?'▼':'▲';
+    });
+    tb.appendChild(trHead);
+    tb.appendChild(trDetail);
   });
+
   const ref=(intl*.945)-(intl*.945*.025)-r;
   const vg=document.getElementById('vgrid');
   vg.innerHTML='';
