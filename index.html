@@ -16,21 +16,25 @@
     .err  { background: #6a2d2d; color: #ffaaaa; }
     .load { background: #444; color: #ccc; }
     .man  { background: #6a5a2d; color: #ffd700; }
-    main { max-width: 960px; margin: 1.5rem auto; padding: 0 1rem; }
-    .grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 1.5rem; }
+    main { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
+    .grid4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 1.5rem; }
     .card { background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
     .card label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px; }
-    .card .big { font-size: 24px; font-weight: bold; color: #1a1a1a; }
+    .card .big { font-size: 22px; font-weight: bold; color: #1a1a1a; }
     .card .sub { font-size: 10px; color: #aaa; margin-top: 3px; }
-    .card input { width: 100%; border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; font-size: 14px; margin-top: 8px; }
-    .delta { display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 999px; margin-left: 6px; }
+    .card input { width: 100%; border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; font-size: 13px; margin-top: 8px; }
+    .delta { display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 999px; margin-left: 4px; }
     .up { background: #e6f4e6; color: #2d6a2d; }
     .dn { background: #f4e6e6; color: #6a2d2d; }
-    .comparativa { margin-top: 8px; padding: 8px 10px; background: #f9f9f9; border-radius: 8px; border-left: 3px solid #FFD700; }
-    .comparativa .comp-titulo { font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 4px; }
-    .comparativa .comp-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    .comparativa .comp-val { font-weight: bold; color: #1a1a1a; }
-    .comparativa .comp-delta { font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 999px; }
+    .comp-card { background: #1a1a1a; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .comp-card label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px; }
+    .comp-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #333; }
+    .comp-row:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    .comp-label { font-size: 10px; color: #aaa; text-transform: uppercase; }
+    .comp-val { font-size: 14px; font-weight: bold; color: #FFD700; }
+    .comp-delta { font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 999px; }
+    .comp-up { background: #2d6a2d; color: #90ee90; }
+    .comp-dn { background: #6a2d2d; color: #ffaaaa; }
     .sec { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin: 1.5rem 0 0.75rem; }
     .sec-row { display: flex; align-items: center; justify-content: space-between; margin: 1.5rem 0 0.75rem; }
     .sec-row .sec { margin: 0; }
@@ -60,7 +64,7 @@
     .btn-sm { padding: 6px 12px; font-size: 12px; }
     .btn:hover { opacity: 0.85; }
     .sbar { font-size: 11px; color: #aaa; margin-top: 1rem; text-align: right; padding-bottom: 2rem; }
-    @media(max-width:600px) { .grid3,.vgrid { grid-template-columns: 1fr 1fr; } th,td { font-size: 11px; padding: 6px 8px; } }
+    @media(max-width:700px) { .grid4 { grid-template-columns: 1fr 1fr; } .vgrid { grid-template-columns: 1fr 1fr; } th,td { font-size: 11px; padding: 6px 8px; } }
   </style>
 </head>
 <body>
@@ -75,38 +79,51 @@
   </div>
 </header>
 <main>
-  <div class="grid3">
+  <div class="grid4">
     <div class="card">
       <label>Onza troy Bid — Kitco (USD)</label>
       <div><span class="big" id="onza-v">—</span><span class="delta" id="onza-d"></span></div>
       <div class="sub" id="onza-src">Consultando...</div>
-      <div class="comparativa" id="comp-onza" style="display:none;">
-        <div class="comp-titulo">Ayer 9:00 am</div>
-        <div class="comp-row">
-          <span class="comp-val" id="comp-onza-val">—</span>
-          <span class="comp-delta" id="comp-onza-delta"></span>
-        </div>
-      </div>
       <input type="number" id="onza-i" placeholder="Ingresar manualmente" step="0.1" oninput="manual('o')">
     </div>
     <div class="card">
       <label>Dólar Compra — Banco de Bogotá (COP)</label>
       <div><span class="big" id="dolar-v">—</span><span class="delta" id="dolar-d"></span></div>
       <div class="sub" id="dolar-src">Consultando...</div>
-      <div class="comparativa" id="comp-dolar" style="display:none;">
-        <div class="comp-titulo">Ayer 9:00 am</div>
-        <div class="comp-row">
-          <span class="comp-val" id="comp-dolar-val">—</span>
-          <span class="comp-delta" id="comp-dolar-delta"></span>
-        </div>
-      </div>
       <input type="number" id="dolar-i" placeholder="Ingresar manualmente" step="1" oninput="manual('d')">
     </div>
     <div class="card">
-      <label>Regalías del mes (COP/g)</label>
-      <span class="big" id="reg-v">—</span>
-      <div class="sub">Actualizar al inicio de cada mes</div>
-      <input type="number" id="reg-i" value="18965.39" step="0.01" oninput="manual('r')">
+      <label>Internacional (COP/g)</label>
+      <div><span class="big" id="intl-v">—</span><span class="delta" id="intl-d"></span></div>
+      <div class="sub">Onza × Dólar ÷ 31.1035</div>
+      <div style="margin-top:8px;">
+        <label style="margin-bottom:2px;">Regalías del mes (COP/g)</label>
+        <input type="number" id="reg-i" value="18965.39" step="0.01" oninput="manual('r')">
+      </div>
+    </div>
+    <div class="comp-card" id="comp-card">
+      <label>Variación vs ayer 9:00 am</label>
+      <div class="comp-row">
+        <div>
+          <div class="comp-label">Onza</div>
+          <div class="comp-val" id="comp-onza-val">—</div>
+        </div>
+        <span class="comp-delta" id="comp-onza-delta">—</span>
+      </div>
+      <div class="comp-row">
+        <div>
+          <div class="comp-label">Dólar</div>
+          <div class="comp-val" id="comp-dolar-val">—</div>
+        </div>
+        <span class="comp-delta" id="comp-dolar-delta">—</span>
+      </div>
+      <div class="comp-row">
+        <div>
+          <div class="comp-label">Internacional</div>
+          <div class="comp-val" id="comp-intl-val">—</div>
+        </div>
+        <span class="comp-delta" id="comp-intl-delta">—</span>
+      </div>
     </div>
   </div>
 
@@ -205,28 +222,34 @@ function setDelta(id,nv,ov,usd){
   el.textContent=(d>0?'+':'')+(usd?fmtU(d):fmt(d));
 }
 
+function mostrarComparativa(precioAyer){
+  if(!precioAyer||!cur.o||!cur.d) return;
+  const intlHoy=(cur.o*cur.d)/TROY;
+  const intlAyer=(precioAyer.onza*precioAyer.dolar)/TROY;
+
+  document.getElementById('comp-onza-val').textContent='$ '+fmtU(precioAyer.onza);
+  const diffO=cur.o-precioAyer.onza;
+  const elO=document.getElementById('comp-onza-delta');
+  elO.className='comp-delta '+(diffO>0?'comp-up':'comp-dn');
+  elO.textContent=(diffO>0?'▲ +':'▼ ')+fmtU(Math.abs(diffO));
+
+  document.getElementById('comp-dolar-val').textContent='$ '+fmt(precioAyer.dolar);
+  const diffD=cur.d-precioAyer.dolar;
+  const elD=document.getElementById('comp-dolar-delta');
+  elD.className='comp-delta '+(diffD>0?'comp-up':'comp-dn');
+  elD.textContent=(diffD>0?'▲ +':'▼ ')+fmt(Math.abs(diffD));
+
+  document.getElementById('comp-intl-val').textContent='$ '+fmt(intlAyer);
+  const diffI=intlHoy-intlAyer;
+  const elI=document.getElementById('comp-intl-delta');
+  elI.className='comp-delta '+(diffI>0?'comp-up':'comp-dn');
+  elI.textContent=(diffI>0?'▲ +':'▼ ')+fmt(Math.abs(diffI));
+}
+
 function verTabla(){
   tablaVisible=!tablaVisible;
   document.getElementById('tabla-container').style.display=tablaVisible?'block':'none';
   document.getElementById('btn-tabla').textContent=tablaVisible?'Ocultar tabla':'Ver tabla';
-}
-
-function mostrarComparativa(precioAyer){
-  if(!precioAyer) return;
-  const co=document.getElementById('comp-onza');
-  co.style.display='block';
-  document.getElementById('comp-onza-val').textContent='$ '+fmtU(precioAyer.onza);
-  const diffO=cur.o-precioAyer.onza;
-  const elO=document.getElementById('comp-onza-delta');
-  elO.className='comp-delta '+(diffO>0?'up':'dn');
-  elO.textContent=(diffO>0?'SUBIÓ ▲':'BAJÓ ▼')+' '+fmtU(Math.abs(diffO));
-  const cd=document.getElementById('comp-dolar');
-  cd.style.display='block';
-  document.getElementById('comp-dolar-val').textContent='$ '+fmt(precioAyer.dolar);
-  const diffD=cur.d-precioAyer.dolar;
-  const elD=document.getElementById('comp-dolar-delta');
-  elD.className='comp-delta '+(diffD>0?'up':'dn');
-  elD.textContent=(diffD>0?'SUBIÓ ▲':'BAJÓ ▼')+' '+fmt(Math.abs(diffD));
 }
 
 async function guardarPrecios(){
@@ -279,7 +302,7 @@ async function fetchAll(){
   if(rO.status==='fulfilled'&&rO.value.bid){
     cur.o=rO.value.bid;
     document.getElementById('onza-v').textContent='$ '+fmtU(cur.o);
-    document.getElementById('onza-i').value=cur.o.toFixed(2);
+    document.getElementById('onza-i')&&(document.getElementById('onza-i').value=cur.o.toFixed(2));
     document.getElementById('onza-src').textContent='Kitco spot Bid — actualizado';
     setDelta('onza-d',cur.o,po,true);
     okO=true;
@@ -289,19 +312,24 @@ async function fetchAll(){
   if(rD.status==='fulfilled'&&rD.value.compra){
     cur.d=rD.value.compra;
     document.getElementById('dolar-v').textContent='$ '+fmt(cur.d);
-    document.getElementById('dolar-i').value=cur.d.toFixed(2);
+    document.getElementById('dolar-i')&&(document.getElementById('dolar-i').value=cur.d.toFixed(2));
     document.getElementById('dolar-src').textContent=`Banco de Bogotá — Compra ${rD.value.hora}`;
     setDelta('dolar-d',cur.d,pd,false);
     okD=true;
   } else {
     document.getElementById('dolar-src').textContent='Sin acceso — ingresa manualmente';
   }
+  const r=parseFloat(document.getElementById('reg-i').value)||18965.39;
+  cur.r=r;
+  if(cur.o&&cur.d){
+    const intl=(cur.o*cur.d)/TROY;
+    document.getElementById('intl-v').textContent='$ '+fmt(intl);
+    const prevIntl=po&&pd?(po*pd)/TROY:null;
+    setDelta('intl-d',intl,prevIntl,false);
+  }
   if(rH.status==='fulfilled'&&rH.value.precioAyer&&cur.o&&cur.d){
     mostrarComparativa(rH.value.precioAyer);
   }
-  const r=parseFloat(document.getElementById('reg-i').value)||18965.39;
-  cur.r=r;
-  document.getElementById('reg-v').textContent='$ '+fmt(r);
   if(okO&&okD){ setBadge('En vivo','live'); guardarPrecios(); }
   else if(okO||okD) setBadge('Parcial','man');
   else setBadge('Sin conexión','err');
@@ -347,7 +375,7 @@ function render(){
       document.querySelectorAll('#tbody tr').forEach(t=>t.classList.remove('selected'));
       tr.classList.add('selected');
       renderVitrina(l);
-      if(!tablaVisible){ verTabla(); }
+      if(!tablaVisible) verTabla();
     });
     tb.appendChild(tr);
   });
@@ -355,13 +383,17 @@ function render(){
 }
 
 function manual(w){
-  const o=parseFloat(document.getElementById('onza-i').value);
-  const d=parseFloat(document.getElementById('dolar-i').value);
+  const o=parseFloat(document.getElementById('onza-i')?document.getElementById('onza-i').value:cur.o);
+  const d=parseFloat(document.getElementById('dolar-i')?document.getElementById('dolar-i').value:cur.d);
   const r=parseFloat(document.getElementById('reg-i').value);
   if(o&&w==='o'){cur.o=o;document.getElementById('onza-v').textContent='$ '+fmtU(o);}
   if(d&&w==='d'){cur.d=d;document.getElementById('dolar-v').textContent='$ '+fmt(d);}
-  if(r&&w==='r'){cur.r=r;document.getElementById('reg-v').textContent='$ '+fmt(r);}
-  if(cur.o&&cur.d) render();
+  if(r&&w==='r'){cur.r=r;}
+  if(cur.o&&cur.d){
+    const intl=(cur.o*cur.d)/TROY;
+    document.getElementById('intl-v').textContent='$ '+fmt(intl);
+    render();
+  }
   setBadge('Manual','man');
 }
 
@@ -373,7 +405,7 @@ function exportExcel(){
     ['MC Metales del Caribe','','','','',''],
     ['Fecha:',new Date().toLocaleString('es-CO'),'','','',''],
     ['Onza Bid USD:',fmtU(o),'','Dólar Compra COP:',fmt(d),''],
-    ['Regalías COP/g:',fmt(r),'','Internacional COP/g:',fmt(intl),''],
+    ['Internacional COP/g:',fmt(intl),'','Regalías COP/g:',fmt(r),''],
     [],
     ['Ley','Internacional','Base bruta','Retefuente','Base Puro neto','Italiano'],
   ];
@@ -409,4 +441,4 @@ setInterval(fetchAll, 5*60*1000);
 setInterval(guardarPrecios, 30*60*1000);
 </script>
 </body>
-</html>
+</html
