@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MC Metales del Caribe — Precios</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #f5f5f5; color: #1a1a1a; }
@@ -22,7 +23,7 @@
     .card label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px; }
     .card .big { font-size: 22px; font-weight: bold; color: #1a1a1a; }
     .card .sub { font-size: 10px; color: #aaa; margin-top: 3px; }
-    .card input { width: 100%; border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; font-size: 13px; margin-top: 8px; }
+    .card input[type=number] { width: 100%; border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; font-size: 13px; margin-top: 8px; }
     .delta { display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 999px; margin-left: 4px; }
     .up { background: #e6f4e6; color: #2d6a2d; }
     .dn { background: #f4e6e6; color: #6a2d2d; }
@@ -53,10 +54,17 @@
     tr.hl td:first-child { color: #2d6a2d; }
     tr.selected td { background: #FFD700 !important; color: #1a1a1a !important; }
     tr.selected td:first-child { color: #1a1a1a !important; }
+    .hist-filtros { background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1rem; display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
+    .hist-filtros label { font-size: 10px; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
+    .hist-filtros input, .hist-filtros select { width: 100%; border: 1px solid #ddd; border-radius: 6px; padding: 7px 10px; font-size: 13px; }
     .hist-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 0.5rem; }
     .hist-table th { background: #1a1a1a; color: #FFD700; padding: 8px 10px; text-align: left; font-size: 11px; }
     .hist-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; text-align: left; cursor: default; }
     .hist-table tr:hover td { background: #fafafa; }
+    .chart-container { background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1rem; }
+    .chart-tabs { display: flex; gap: 8px; margin-bottom: 1rem; }
+    .chart-tab { padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; background: #f0f0f0; color: #888; }
+    .chart-tab.active { background: #1a1a1a; color: #FFD700; }
     .actions { display: flex; gap: 10px; margin-top: 1.5rem; flex-wrap: wrap; }
     .btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; font-weight: bold; }
     .btn-gold { background: #FFD700; color: #1a1a1a; }
@@ -64,7 +72,8 @@
     .btn-sm { padding: 6px 12px; font-size: 12px; }
     .btn:hover { opacity: 0.85; }
     .sbar { font-size: 11px; color: #aaa; margin-top: 1rem; text-align: right; padding-bottom: 2rem; }
-    @media(max-width:700px) { .grid4 { grid-template-columns: 1fr 1fr; } .vgrid { grid-template-columns: 1fr 1fr; } th,td { font-size: 11px; padding: 6px 8px; } }
+    .no-data { text-align: center; color: #aaa; padding: 20px; }
+    @media(max-width:700px) { .grid4 { grid-template-columns: 1fr 1fr; } .vgrid { grid-template-columns: 1fr 1fr; } .hist-filtros { grid-template-columns: 1fr 1fr; } th,td { font-size: 11px; padding: 6px 8px; } }
   </style>
 </head>
 <body>
@@ -101,27 +110,18 @@
         <input type="number" id="reg-i" value="18965.39" step="0.01" oninput="manual('r')">
       </div>
     </div>
-    <div class="comp-card" id="comp-card">
+    <div class="comp-card">
       <label>Variación vs ayer 9:00 am</label>
       <div class="comp-row">
-        <div>
-          <div class="comp-label">Onza</div>
-          <div class="comp-val" id="comp-onza-val">—</div>
-        </div>
+        <div><div class="comp-label">Onza</div><div class="comp-val" id="comp-onza-val">—</div></div>
         <span class="comp-delta" id="comp-onza-delta">—</span>
       </div>
       <div class="comp-row">
-        <div>
-          <div class="comp-label">Dólar</div>
-          <div class="comp-val" id="comp-dolar-val">—</div>
-        </div>
+        <div><div class="comp-label">Dólar</div><div class="comp-val" id="comp-dolar-val">—</div></div>
         <span class="comp-delta" id="comp-dolar-delta">—</span>
       </div>
       <div class="comp-row">
-        <div>
-          <div class="comp-label">Internacional</div>
-          <div class="comp-val" id="comp-intl-val">—</div>
-        </div>
+        <div><div class="comp-label">Internacional</div><div class="comp-val" id="comp-intl-val">—</div></div>
         <span class="comp-delta" id="comp-intl-delta">—</span>
       </div>
     </div>
@@ -141,12 +141,8 @@
     <table>
       <thead>
         <tr>
-          <th>Ley</th>
-          <th>Internacional (COP/g)</th>
-          <th>Base bruta</th>
-          <th>Retefuente</th>
-          <th>Base Puro neto</th>
-          <th>Italiano (×0.74)</th>
+          <th>Ley</th><th>Internacional (COP/g)</th><th>Base bruta</th>
+          <th>Retefuente</th><th>Base Puro neto</th><th>Italiano (×0.74)</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -154,23 +150,60 @@
   </div>
 
   <div class="sec-row" style="margin-top:2rem;">
-    <div class="sec">Historial de precios — últimos 15 días</div>
+    <div class="sec">Historial de precios — último año</div>
     <button class="btn btn-dark btn-sm" id="btn-historial" onclick="verHistorial()">Ver historial</button>
   </div>
   <div id="historial-container" style="display:none;">
+    <div class="hist-filtros">
+      <div>
+        <label>Desde</label>
+        <input type="date" id="f-desde">
+      </div>
+      <div>
+        <label>Hasta</label>
+        <input type="date" id="f-hasta">
+      </div>
+      <div>
+        <label>Hora</label>
+        <select id="f-hora">
+          <option value="">Todas las horas</option>
+          <option value="09">9:00 am</option>
+          <option value="10">10:00 am</option>
+          <option value="11">11:00 am</option>
+          <option value="12">12:00 pm</option>
+          <option value="13">1:00 pm</option>
+          <option value="14">2:00 pm</option>
+          <option value="15">3:00 pm</option>
+          <option value="16">4:00 pm</option>
+          <option value="17">5:00 pm</option>
+        </select>
+      </div>
+      <button class="btn btn-dark" onclick="aplicarFiltros()">Filtrar</button>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-tabs">
+        <button class="chart-tab active" onclick="cambiarGrafica('onza',this)">Onza (USD)</button>
+        <button class="chart-tab" onclick="cambiarGrafica('dolar',this)">Dólar (COP)</button>
+        <button class="chart-tab" onclick="cambiarGrafica('intl',this)">Internacional</button>
+      </div>
+      <div style="position:relative;height:220px;">
+        <canvas id="hist-chart"></canvas>
+      </div>
+    </div>
+
     <div style="overflow-x:auto;">
       <table class="hist-table">
         <thead>
           <tr>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Onza (USD)</th>
-            <th>Dólar Compra (COP)</th>
+            <th>Fecha</th><th>Hora</th>
+            <th>Onza (USD)</th><th>Dólar Compra (COP)</th><th>Internacional (COP/g)</th>
           </tr>
         </thead>
         <tbody id="hist-tbody"></tbody>
       </table>
     </div>
+    <div id="hist-count" style="font-size:11px;color:#aaa;margin-top:8px;text-align:right;"></div>
   </div>
 
   <div class="actions">
@@ -188,27 +221,23 @@ const API_GUARDAR  = 'https://mc-metales-precios.azurewebsites.net/api/guardar';
 const API_HISTORIAL= 'https://mc-metales-precios.azurewebsites.net/api/historial';
 const TROY=31.1035, ITAL=0.74;
 const LEYES=[
-  {l:'97%',  f:.970,r:.025},{l:'96%',  f:.960,r:.025},{l:'95%',  f:.950,r:.025},
+  {l:'97%',f:.970,r:.025},{l:'96%',f:.960,r:.025},{l:'95%',f:.950,r:.025},
   {l:'94.5%',f:.945,r:.025,hl:true},
-  {l:'94%',  f:.940,r:.025},{l:'93.5%',f:.935,r:.025},{l:'93%',  f:.930,r:.025},
-  {l:'92%',  f:.920,r:.025},{l:'91.5%',f:.915,r:.025},{l:'91%',  f:.910,r:.025},
-  {l:'90.5%',f:.905,r:.025},{l:'90%',  f:.900,r:.025},
-  {l:'88%',  f:.880,r:.010},{l:'86%',  f:.860,r:.010},
-  {l:'84%',  f:.840,r:.010},{l:'82%',  f:.820,r:.010},
+  {l:'94%',f:.940,r:.025},{l:'93.5%',f:.935,r:.025},{l:'93%',f:.930,r:.025},
+  {l:'92%',f:.920,r:.025},{l:'91.5%',f:.915,r:.025},{l:'91%',f:.910,r:.025},
+  {l:'90.5%',f:.905,r:.025},{l:'90%',f:.900,r:.025},
+  {l:'88%',f:.880,r:.010},{l:'86%',f:.860,r:.010},
+  {l:'84%',f:.840,r:.010},{l:'82%',f:.820,r:.010},
 ];
 const VIT=[
-  {n:'Puro',             k:1},
-  {n:'Monedas (880)',    k:.880/.945},
-  {n:'Italiano (740)',   k:0.74},
-  {n:'Nacional (690)',   k:.690/.945},
-  {n:'Nacional (650)',   k:.650/.945},
-  {n:'14 Kilates (560)', k:.560/.945},
-  {n:'Tubular (500)',    k:.500/.945},
-  {n:'Bajos (360)',      k:.360/.945},
+  {n:'Puro',k:1},{n:'Monedas (880)',k:.880/.945},{n:'Italiano (740)',k:0.74},
+  {n:'Nacional (690)',k:.690/.945},{n:'Nacional (650)',k:.650/.945},
+  {n:'14 Kilates (560)',k:.560/.945},{n:'Tubular (500)',k:.500/.945},{n:'Bajos (360)',k:.360/.945},
 ];
 let prev={o:null,d:null}, cur={o:null,d:null,r:18965.39};
 let leySeleccionada=LEYES[3];
 let tablaVisible=false, historialVisible=false;
+let todosRegistros=[], graficaActiva='onza', histChart=null;
 const fmt=n=>Math.round(n).toLocaleString('es-CO');
 const fmtU=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
@@ -226,19 +255,16 @@ function mostrarComparativa(precioAyer){
   if(!precioAyer||!cur.o||!cur.d) return;
   const intlHoy=(cur.o*cur.d)/TROY;
   const intlAyer=(precioAyer.onza*precioAyer.dolar)/TROY;
-
   document.getElementById('comp-onza-val').textContent='$ '+fmtU(precioAyer.onza);
   const diffO=cur.o-precioAyer.onza;
   const elO=document.getElementById('comp-onza-delta');
   elO.className='comp-delta '+(diffO>0?'comp-up':'comp-dn');
   elO.textContent=(diffO>0?'▲ +':'▼ ')+fmtU(Math.abs(diffO));
-
   document.getElementById('comp-dolar-val').textContent='$ '+fmt(precioAyer.dolar);
   const diffD=cur.d-precioAyer.dolar;
   const elD=document.getElementById('comp-dolar-delta');
   elD.className='comp-delta '+(diffD>0?'comp-up':'comp-dn');
   elD.textContent=(diffD>0?'▲ +':'▼ ')+fmt(Math.abs(diffD));
-
   document.getElementById('comp-intl-val').textContent='$ '+fmt(intlAyer);
   const diffI=intlHoy-intlAyer;
   const elI=document.getElementById('comp-intl-delta');
@@ -252,15 +278,85 @@ function verTabla(){
   document.getElementById('btn-tabla').textContent=tablaVisible?'Ocultar tabla':'Ver tabla';
 }
 
-async function guardarPrecios(){
-  if(!cur.o||!cur.d) return;
-  try {
-    await fetch(API_GUARDAR,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({onza:cur.o,dolar:cur.d})
-    });
-  } catch(e){ console.log('Error guardando:',e); }
+function cambiarGrafica(tipo, btn){
+  graficaActiva=tipo;
+  document.querySelectorAll('.chart-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtrados=getFiltrados();
+  dibujarGrafica(filtrados);
+}
+
+function getFiltrados(){
+  const desde=document.getElementById('f-desde').value;
+  const hasta=document.getElementById('f-hasta').value;
+  const hora=document.getElementById('f-hora').value;
+  return todosRegistros.filter(r=>{
+    const ts=r.timestamp.slice(0,10);
+    if(desde && ts<desde) return false;
+    if(hasta && ts>hasta) return false;
+    if(hora && !r.hora.startsWith(hora+':')) return false;
+    return true;
+  });
+}
+
+function aplicarFiltros(){
+  const filtrados=getFiltrados();
+  renderTablaHist(filtrados);
+  dibujarGrafica(filtrados);
+}
+
+function dibujarGrafica(registros){
+  const ordenados=[...registros].reverse().slice(-100);
+  const labels=ordenados.map(r=>r.fecha+' '+r.hora.slice(0,5));
+  let datos, label, color;
+  if(graficaActiva==='onza'){
+    datos=ordenados.map(r=>r.onza);
+    label='Onza (USD)'; color='#FFD700';
+  } else if(graficaActiva==='dolar'){
+    datos=ordenados.map(r=>r.dolar);
+    label='Dólar COP'; color='#4a9eff';
+  } else {
+    datos=ordenados.map(r=>Math.round((r.onza*r.dolar)/TROY));
+    label='Internacional COP/g'; color='#90ee90';
+  }
+  if(histChart) histChart.destroy();
+  const ctx=document.getElementById('hist-chart').getContext('2d');
+  histChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label,data:datos,
+        borderColor:color,backgroundColor:color+'22',
+        borderWidth:2,pointRadius:2,tension:0.3,fill:true
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:8,font:{size:10}},grid:{display:false}},
+        y:{ticks:{font:{size:10}},grid:{color:'#f0f0f0'}}
+      }
+    }
+  });
+}
+
+function renderTablaHist(registros){
+  const tbody=document.getElementById('hist-tbody');
+  tbody.innerHTML='';
+  if(!registros||registros.length===0){
+    tbody.innerHTML=`<tr><td colspan="5" class="no-data">Sin registros para este período</td></tr>`;
+    document.getElementById('hist-count').textContent='';
+    return;
+  }
+  registros.forEach(r=>{
+    const intl=Math.round((r.onza*r.dolar)/TROY);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.fecha}</td><td>${r.hora}</td><td>$ ${fmtU(r.onza)}</td><td>$ ${fmt(r.dolar)}</td><td>$ ${fmt(intl)}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('hist-count').textContent=`${registros.length} registros encontrados`;
 }
 
 async function verHistorial(){
@@ -270,24 +366,33 @@ async function verHistorial(){
   if(!historialVisible){ container.style.display='none'; btn.textContent='Ver historial'; return; }
   container.style.display='block';
   btn.textContent='Ocultar historial';
+
+  // Fechas por defecto: último mes
+  const hoy=new Date();
+  const hace30=new Date(); hace30.setDate(hoy.getDate()-30);
+  document.getElementById('f-hasta').value=hoy.toISOString().slice(0,10);
+  document.getElementById('f-desde').value=hace30.toISOString().slice(0,10);
+
   const tbody=document.getElementById('hist-tbody');
-  tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">Cargando...</td></tr>';
+  tbody.innerHTML=`<tr><td colspan="5" class="no-data">Cargando...</td></tr>`;
   try {
     const res=await fetch(API_HISTORIAL);
     const data=await res.json();
-    tbody.innerHTML='';
-    if(!data.registros||data.registros.length===0){
-      tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">Sin registros aún — el primer registro aparece en 30 minutos</td></tr>';
-      return;
-    }
-    data.registros.forEach(r=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${r.fecha}</td><td>${r.hora}</td><td>$ ${fmtU(r.onza)}</td><td>$ ${fmt(r.dolar)}</td>`;
-      tbody.appendChild(tr);
-    });
+    todosRegistros=data.registros||[];
+    if(data.precioAyer&&cur.o&&cur.d) mostrarComparativa(data.precioAyer);
+    const filtrados=getFiltrados();
+    renderTablaHist(filtrados);
+    dibujarGrafica(filtrados);
   } catch(e){
-    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">Error cargando historial</td></tr>';
+    tbody.innerHTML=`<tr><td colspan="5" class="no-data">Error cargando historial</td></tr>`;
   }
+}
+
+async function guardarPrecios(){
+  if(!cur.o||!cur.d) return;
+  try {
+    await fetch(API_GUARDAR,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({onza:cur.o,dolar:cur.d})});
+  } catch(e){}
 }
 
 async function fetchAll(){
@@ -302,23 +407,19 @@ async function fetchAll(){
   if(rO.status==='fulfilled'&&rO.value.bid){
     cur.o=rO.value.bid;
     document.getElementById('onza-v').textContent='$ '+fmtU(cur.o);
-    document.getElementById('onza-i')&&(document.getElementById('onza-i').value=cur.o.toFixed(2));
+    document.getElementById('onza-i').value=cur.o.toFixed(2);
     document.getElementById('onza-src').textContent='Kitco spot Bid — actualizado';
     setDelta('onza-d',cur.o,po,true);
     okO=true;
-  } else {
-    document.getElementById('onza-src').textContent='Sin acceso — ingresa manualmente';
-  }
+  } else document.getElementById('onza-src').textContent='Sin acceso — ingresa manualmente';
   if(rD.status==='fulfilled'&&rD.value.compra){
     cur.d=rD.value.compra;
     document.getElementById('dolar-v').textContent='$ '+fmt(cur.d);
-    document.getElementById('dolar-i')&&(document.getElementById('dolar-i').value=cur.d.toFixed(2));
+    document.getElementById('dolar-i').value=cur.d.toFixed(2);
     document.getElementById('dolar-src').textContent=`Banco de Bogotá — Compra ${rD.value.hora}`;
     setDelta('dolar-d',cur.d,pd,false);
     okD=true;
-  } else {
-    document.getElementById('dolar-src').textContent='Sin acceso — ingresa manualmente';
-  }
+  } else document.getElementById('dolar-src').textContent='Sin acceso — ingresa manualmente';
   const r=parseFloat(document.getElementById('reg-i').value)||18965.39;
   cur.r=r;
   if(cur.o&&cur.d){
@@ -329,6 +430,7 @@ async function fetchAll(){
   }
   if(rH.status==='fulfilled'&&rH.value.precioAyer&&cur.o&&cur.d){
     mostrarComparativa(rH.value.precioAyer);
+    todosRegistros=rH.value.registros||[];
   }
   if(okO&&okD){ setBadge('En vivo','live'); guardarPrecios(); }
   else if(okO||okD) setBadge('Parcial','man');
@@ -362,14 +464,7 @@ function render(){
     const tr=document.createElement('tr');
     if(l.hl) tr.className='hl';
     if(l===leySeleccionada) tr.classList.add('selected');
-    tr.innerHTML=`
-      <td>${l.l}</td>
-      <td>$ ${fmt(intl)}</td>
-      <td>$ ${fmt(base)}</td>
-      <td>$ ${fmt(rete)}</td>
-      <td>$ ${fmt(neto)}</td>
-      <td>$ ${fmt(ital)}</td>
-    `;
+    tr.innerHTML=`<td>${l.l}</td><td>$ ${fmt(intl)}</td><td>$ ${fmt(base)}</td><td>$ ${fmt(rete)}</td><td>$ ${fmt(neto)}</td><td>$ ${fmt(ital)}</td>`;
     tr.addEventListener('click',()=>{
       leySeleccionada=l;
       document.querySelectorAll('#tbody tr').forEach(t=>t.classList.remove('selected'));
@@ -383,8 +478,8 @@ function render(){
 }
 
 function manual(w){
-  const o=parseFloat(document.getElementById('onza-i')?document.getElementById('onza-i').value:cur.o);
-  const d=parseFloat(document.getElementById('dolar-i')?document.getElementById('dolar-i').value:cur.d);
+  const o=parseFloat(document.getElementById('onza-i').value);
+  const d=parseFloat(document.getElementById('dolar-i').value);
   const r=parseFloat(document.getElementById('reg-i').value);
   if(o&&w==='o'){cur.o=o;document.getElementById('onza-v').textContent='$ '+fmtU(o);}
   if(d&&w==='d'){cur.d=d;document.getElementById('dolar-v').textContent='$ '+fmt(d);}
@@ -406,8 +501,7 @@ function exportExcel(){
     ['Fecha:',new Date().toLocaleString('es-CO'),'','','',''],
     ['Onza Bid USD:',fmtU(o),'','Dólar Compra COP:',fmt(d),''],
     ['Internacional COP/g:',fmt(intl),'','Regalías COP/g:',fmt(r),''],
-    [],
-    ['Ley','Internacional','Base bruta','Retefuente','Base Puro neto','Italiano'],
+    [],['Ley','Internacional','Base bruta','Retefuente','Base Puro neto','Italiano'],
   ];
   LEYES.forEach(l=>{
     const base=intl*l.f,rete=base*l.r,neto=base-rete-r;
@@ -435,10 +529,9 @@ function copiar(){
 
 document.getElementById('fecha').textContent=
   new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-
 fetchAll();
-setInterval(fetchAll, 5*60*1000);
-setInterval(guardarPrecios, 30*60*1000);
+setInterval(fetchAll,5*60*1000);
+setInterval(guardarPrecios,30*60*1000);
 </script>
 </body>
-</html
+</html>
