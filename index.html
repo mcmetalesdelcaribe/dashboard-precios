@@ -26,6 +26,11 @@
     .delta { display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 999px; margin-left: 6px; }
     .up { background: #e6f4e6; color: #2d6a2d; }
     .dn { background: #f4e6e6; color: #6a2d2d; }
+    .comparativa { margin-top: 8px; padding: 8px 10px; background: #f9f9f9; border-radius: 8px; border-left: 3px solid #FFD700; }
+    .comparativa .comp-titulo { font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 4px; }
+    .comparativa .comp-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+    .comparativa .comp-val { font-weight: bold; color: #1a1a1a; }
+    .comparativa .comp-delta { font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 999px; }
     .sec { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin: 1.5rem 0 0.75rem; }
     .sec-row { display: flex; align-items: center; justify-content: space-between; margin: 1.5rem 0 0.75rem; }
     .sec-row .sec { margin: 0; }
@@ -44,10 +49,15 @@
     tr.hl td:first-child { color: #2d6a2d; }
     tr.selected td { background: #FFD700 !important; color: #1a1a1a !important; }
     tr.selected td:first-child { color: #1a1a1a !important; }
+    .hist-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 0.5rem; }
+    .hist-table th { background: #1a1a1a; color: #FFD700; padding: 8px 10px; text-align: left; font-size: 11px; }
+    .hist-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; text-align: left; }
+    .hist-table tr:hover td { background: #fafafa; }
     .actions { display: flex; gap: 10px; margin-top: 1.5rem; flex-wrap: wrap; }
     .btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; font-weight: bold; }
     .btn-gold { background: #FFD700; color: #1a1a1a; }
     .btn-dark { background: #1a1a1a; color: #FFD700; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
     .btn:hover { opacity: 0.85; }
     .sbar { font-size: 11px; color: #aaa; margin-top: 1rem; text-align: right; padding-bottom: 2rem; }
     @media(max-width:600px) { .grid3,.vgrid { grid-template-columns: 1fr 1fr; } th,td { font-size: 11px; padding: 6px 8px; } }
@@ -70,12 +80,26 @@
       <label>Onza troy Bid — Kitco (USD)</label>
       <div><span class="big" id="onza-v">—</span><span class="delta" id="onza-d"></span></div>
       <div class="sub" id="onza-src">Consultando...</div>
+      <div class="comparativa" id="comp-onza" style="display:none;">
+        <div class="comp-titulo">Ayer 9:00 am</div>
+        <div class="comp-row">
+          <span class="comp-val" id="comp-onza-val">—</span>
+          <span class="comp-delta" id="comp-onza-delta"></span>
+        </div>
+      </div>
       <input type="number" id="onza-i" placeholder="Ingresar manualmente" step="0.1" oninput="manual('o')">
     </div>
     <div class="card">
       <label>Dólar Compra — Banco de Bogotá (COP)</label>
       <div><span class="big" id="dolar-v">—</span><span class="delta" id="dolar-d"></span></div>
       <div class="sub" id="dolar-src">Consultando...</div>
+      <div class="comparativa" id="comp-dolar" style="display:none;">
+        <div class="comp-titulo">Ayer 9:00 am</div>
+        <div class="comp-row">
+          <span class="comp-val" id="comp-dolar-val">—</span>
+          <span class="comp-delta" id="comp-dolar-delta"></span>
+        </div>
+      </div>
       <input type="number" id="dolar-i" placeholder="Ingresar manualmente" step="1" oninput="manual('d')">
     </div>
     <div class="card">
@@ -109,6 +133,26 @@
     </table>
   </div>
 
+  <div class="sec-row" style="margin-top:2rem;">
+    <div class="sec">Historial de precios — últimos 15 días</div>
+    <button class="btn btn-dark btn-sm" onclick="verHistorial()">Ver historial</button>
+  </div>
+  <div id="historial-container" style="display:none;">
+    <div style="overflow-x:auto;">
+      <table class="hist-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Onza (USD)</th>
+            <th>Dólar Compra (COP)</th>
+          </tr>
+        </thead>
+        <tbody id="hist-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <div class="actions">
     <button class="btn btn-dark" onclick="exportExcel()">Exportar Excel</button>
     <button class="btn btn-gold" onclick="fetchAll()">Refrescar precios</button>
@@ -118,8 +162,10 @@
 </main>
 
 <script>
-const API_ONZA  = 'https://mc-metales-precios.azurewebsites.net/api/onza';
-const API_DOLAR = 'https://mc-metales-precios.azurewebsites.net/api/dolar';
+const API_ONZA     = 'https://mc-metales-precios.azurewebsites.net/api/onza';
+const API_DOLAR    = 'https://mc-metales-precios.azurewebsites.net/api/dolar';
+const API_GUARDAR  = 'https://mc-metales-precios.azurewebsites.net/api/guardar';
+const API_HISTORIAL= 'https://mc-metales-precios.azurewebsites.net/api/historial';
 const TROY=31.1035, ITAL=0.74;
 const LEYES=[
   {l:'97%',  f:.970,r:.025},{l:'96%',  f:.960,r:.025},{l:'95%',  f:.950,r:.025},
@@ -141,7 +187,8 @@ const VIT=[
   {n:'Bajos (360)',      k:.360/.945},
 ];
 let prev={o:null,d:null}, cur={o:null,d:null,r:18965.39};
-let leySeleccionada=LEYES[3]; // 94.5% por defecto
+let leySeleccionada=LEYES[3];
+let historialVisible=false;
 const fmt=n=>Math.round(n).toLocaleString('es-CO');
 const fmtU=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
@@ -155,28 +202,71 @@ function setDelta(id,nv,ov,usd){
   el.textContent=(d>0?'+':'')+(usd?fmtU(d):fmt(d));
 }
 
-function renderVitrina(l){
-  const {o,d,r}=cur;
-  const intl=(o*d)/TROY;
-  const base=intl*l.f, rete=base*l.r, neto=base-rete-r;
-  document.getElementById('ley-activa').textContent='Ley '+l.l;
-  const vg=document.getElementById('vgrid');
-  vg.innerHTML='';
-  VIT.forEach(v=>{
-    const precio=neto*v.k;
-    const c=document.createElement('div');
-    c.className='vc';
-    c.innerHTML=`<div class="vl">${v.n}</div><div class="vv">$ ${fmt(precio)}</div>`;
-    vg.appendChild(c);
-  });
+function mostrarComparativa(precioAyer){
+  if(!precioAyer) return;
+  // Onza
+  const co=document.getElementById('comp-onza');
+  co.style.display='block';
+  document.getElementById('comp-onza-val').textContent='$ '+fmtU(precioAyer.onza);
+  const do_=precioAyer.onza;
+  const diffO=cur.o-do_;
+  const elO=document.getElementById('comp-onza-delta');
+  elO.className='comp-delta '+(diffO>0?'up':'dn');
+  elO.textContent=(diffO>0?'SUBIÓ ▲':'BAJÓ ▼')+' '+fmtU(Math.abs(diffO));
+
+  // Dólar
+  const cd=document.getElementById('comp-dolar');
+  cd.style.display='block';
+  document.getElementById('comp-dolar-val').textContent='$ '+fmt(precioAyer.dolar);
+  const diffD=cur.d-precioAyer.dolar;
+  const elD=document.getElementById('comp-dolar-delta');
+  elD.className='comp-delta '+(diffD>0?'up':'dn');
+  elD.textContent=(diffD>0?'SUBIÓ ▲':'BAJÓ ▼')+' '+fmt(Math.abs(diffD));
+}
+
+async function guardarPrecios(){
+  if(!cur.o||!cur.d) return;
+  try {
+    await fetch(API_GUARDAR,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({onza:cur.o,dolar:cur.d})
+    });
+  } catch(e){ console.log('Error guardando:',e); }
+}
+
+async function verHistorial(){
+  historialVisible=!historialVisible;
+  const container=document.getElementById('historial-container');
+  if(!historialVisible){ container.style.display='none'; return; }
+  container.style.display='block';
+  const tbody=document.getElementById('hist-tbody');
+  tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">Cargando...</td></tr>';
+  try {
+    const res=await fetch(API_HISTORIAL);
+    const data=await res.json();
+    tbody.innerHTML='';
+    if(!data.registros||data.registros.length===0){
+      tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">Sin registros aún</td></tr>';
+      return;
+    }
+    data.registros.forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${r.fecha}</td><td>${r.hora}</td><td>$ ${fmtU(r.onza)}</td><td>$ ${fmt(r.dolar)}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch(e){
+    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">Error cargando historial</td></tr>';
+  }
 }
 
 async function fetchAll(){
   setBadge('Cargando...','load');
   const po=cur.o, pd=cur.d;
-  const [rO,rD]=await Promise.allSettled([
+  const [rO,rD,rH]=await Promise.allSettled([
     fetch(API_ONZA).then(r=>r.json()),
-    fetch(API_DOLAR).then(r=>r.json())
+    fetch(API_DOLAR).then(r=>r.json()),
+    fetch(API_HISTORIAL).then(r=>r.json())
   ]);
   let okO=false,okD=false;
   if(rO.status==='fulfilled'&&rO.value.bid){
@@ -199,14 +289,32 @@ async function fetchAll(){
   } else {
     document.getElementById('dolar-src').textContent='Sin acceso — ingresa manualmente';
   }
+  if(rH.status==='fulfilled'&&rH.value.precioAyer&&cur.o&&cur.d){
+    mostrarComparativa(rH.value.precioAyer);
+  }
   const r=parseFloat(document.getElementById('reg-i').value)||18965.39;
   cur.r=r;
   document.getElementById('reg-v').textContent='$ '+fmt(r);
-  if(okO&&okD) setBadge('En vivo','live');
+  if(okO&&okD){ setBadge('En vivo','live'); guardarPrecios(); }
   else if(okO||okD) setBadge('Parcial','man');
   else setBadge('Sin conexión','err');
   if(cur.o&&cur.d) render();
   setSbar(`Actualizado: ${new Date().toLocaleString('es-CO')} · Refresco automático cada 5 min`);
+}
+
+function renderVitrina(l){
+  const {o,d,r}=cur;
+  const intl=(o*d)/TROY;
+  const base=intl*l.f,rete=base*l.r,neto=base-rete-r;
+  document.getElementById('ley-activa').textContent='Ley '+l.l;
+  const vg=document.getElementById('vgrid');
+  vg.innerHTML='';
+  VIT.forEach(v=>{
+    const c=document.createElement('div');
+    c.className='vc';
+    c.innerHTML=`<div class="vl">${v.n}</div><div class="vv">$ ${fmt(neto*v.k)}</div>`;
+    vg.appendChild(c);
+  });
 }
 
 function render(){
@@ -287,8 +395,10 @@ function copiar(){
 
 document.getElementById('fecha').textContent=
   new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
 fetchAll();
-setInterval(fetchAll,5*60*1000);
+setInterval(fetchAll, 5*60*1000);
+setInterval(guardarPrecios, 30*60*1000);
 </script>
 </body>
 </html>
