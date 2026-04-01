@@ -260,7 +260,10 @@
         <tbody id="hist-tbody"></tbody>
       </table>
     </div>
-    <div id="hist-count" style="font-size:11px;color:#aaa;margin-top:8px;text-align:right;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+      <button id="hist-ver-mas" class="btn btn-dark btn-sm" onclick="verMasHistorial()" style="display:none;">Ver más</button>
+      <div id="hist-count" style="font-size:11px;color:#aaa;text-align:right;flex:1;"></div>
+    </div>
   </div>
 
   <!-- Alertas Email -->
@@ -338,7 +341,7 @@ const VIT=[
 let prev={o:null,d:null}, cur={o:null,d:null,r:18965.39};
 let leySeleccionada=LEYES[3];
 let tablaVisible=false, historialVisible=false, alertasVisible=false;
-let todosRegistros=[], graficaActiva='onza', histChart=null;
+let todosRegistros=[], graficaActiva='onza', histChart=null, histLimite=10;
 const fmt=n=>Math.round(n).toLocaleString('es-CO');
 const fmtU=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
@@ -436,6 +439,7 @@ function getFiltrados(){
 }
 
 function aplicarFiltros(){
+  histLimite=10;
   const filtrados=getFiltrados();
   renderTablaHist(filtrados);
   dibujarGrafica(filtrados);
@@ -480,19 +484,34 @@ function dibujarGrafica(registros){
 
 function renderTablaHist(registros){
   const tbody=document.getElementById('hist-tbody');
+  const btnVerMas=document.getElementById('hist-ver-mas');
   tbody.innerHTML='';
   if(!registros||registros.length===0){
     tbody.innerHTML=`<tr><td colspan="5" class="no-data">Sin registros para este período</td></tr>`;
     document.getElementById('hist-count').textContent='';
+    btnVerMas.style.display='none';
     return;
   }
-  registros.forEach(r=>{
+  const visibles=registros.slice(0,histLimite);
+  visibles.forEach(r=>{
     const intl=Math.round((r.onza*r.dolar)/TROY);
     const tr=document.createElement('tr');
     tr.innerHTML=`<td>${r.fecha}</td><td>${r.hora}</td><td>$ ${fmtU(r.onza)}</td><td>$ ${fmt(r.dolar)}</td><td>$ ${fmt(intl)}</td>`;
     tbody.appendChild(tr);
   });
-  document.getElementById('hist-count').textContent=`${registros.length} registros encontrados`;
+  const restantes=registros.length-visibles.length;
+  if(restantes>0){
+    btnVerMas.style.display='inline-block';
+    btnVerMas.textContent=`Ver más (${restantes} restantes)`;
+  } else {
+    btnVerMas.style.display='none';
+  }
+  document.getElementById('hist-count').textContent=`Mostrando ${visibles.length} de ${registros.length} registros`;
+}
+
+function verMasHistorial(){
+  histLimite+=20;
+  renderTablaHist(getFiltrados());
 }
 
 async function verHistorial(){
@@ -502,6 +521,7 @@ async function verHistorial(){
   if(!historialVisible){ container.style.display='none'; btn.textContent='Ver historial'; return; }
   container.style.display='block';
   btn.textContent='Ocultar historial';
+  histLimite=10;
 
   const hoy=new Date();
   const hace30=new Date(); hace30.setDate(hoy.getDate()-30);

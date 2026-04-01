@@ -176,7 +176,26 @@ app.http('guardar', {
             const client = TableClient.fromConnectionString(CONNECTION, TABLE);
             await client.createTable();
 
+            // Evitar duplicados: omitir si ya existe un registro en los últimos 30 min
             const ahora = new Date();
+            const treintaAtras = new Date(ahora.getTime() - 30 * 60 * 1000);
+            const rowKeyMin = treintaAtras.toISOString().replace(/[:.]/g, '-');
+            const partHoy = ahora.toISOString().slice(0, 10);
+            const partAyer = treintaAtras.toISOString().slice(0, 10);
+
+            let yaExiste = false;
+            for (const pk of [...new Set([partAyer, partHoy])]) {
+                const filter = `PartitionKey eq '${pk}' and RowKey ge '${rowKeyMin}'`;
+                for await (const _ of client.listEntities({ queryOptions: { filter }, select: ['rowKey'] })) {
+                    yaExiste = true;
+                    break;
+                }
+                if (yaExiste) break;
+            }
+            if (yaExiste) {
+                return { status: 200, headers: CORS_HEADERS, body: JSON.stringify({ ok: true, omitido: true }) };
+            }
+
             const rowKey = ahora.toISOString().replace(/[:.]/g, '-');
             const partitionKey = ahora.toISOString().slice(0, 10);
 
