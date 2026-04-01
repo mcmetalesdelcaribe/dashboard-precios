@@ -73,10 +73,66 @@
     .btn:hover { opacity: 0.85; }
     .sbar { font-size: 11px; color: #aaa; margin-top: 1rem; text-align: right; padding-bottom: 2rem; }
     .no-data { text-align: center; color: #aaa; padding: 20px; }
-    @media(max-width:700px) { .grid4 { grid-template-columns: 1fr 1fr; } .vgrid { grid-template-columns: 1fr 1fr; } .hist-filtros { grid-template-columns: 1fr 1fr; } th,td { font-size: 11px; padding: 6px 8px; } }
+
+    /* Alertas panel */
+    .alertas-panel { background: #fff; border-radius: 10px; padding: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1rem; }
+    .alertas-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+    .alertas-grid label { font-size: 10px; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
+    .alertas-grid input { width: 100%; border: 1px solid #ddd; border-radius: 6px; padding: 7px 10px; font-size: 13px; }
+    .alertas-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .alertas-toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+    .alertas-toggle input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
+    .alertas-nota { font-size: 11px; color: #aaa; margin-top: 8px; }
+
+    /* Login overlay */
+    #login-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: #1a1a1a;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-box {
+      background: #222; border-radius: 16px; padding: 2.5rem 2rem;
+      width: 100%; max-width: 360px; text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    }
+    .login-box h2 { color: #FFD700; font-size: 20px; margin-bottom: 4px; }
+    .login-box p { color: #888; font-size: 12px; margin-bottom: 1.5rem; }
+    .login-box input {
+      width: 100%; padding: 12px 14px; border-radius: 8px;
+      border: 1px solid #444; background: #333; color: #fff;
+      font-size: 15px; margin-bottom: 12px; text-align: center; letter-spacing: 2px;
+    }
+    .login-box input:focus { outline: none; border-color: #FFD700; }
+    .login-box button {
+      width: 100%; padding: 12px; border-radius: 8px; border: none;
+      background: #FFD700; color: #1a1a1a; font-size: 15px; font-weight: bold;
+      cursor: pointer;
+    }
+    .login-box button:hover { opacity: 0.9; }
+    .login-error { color: #ffaaaa; font-size: 12px; margin-top: 8px; min-height: 18px; }
+
+    @media(max-width:700px) {
+      .grid4 { grid-template-columns: 1fr 1fr; }
+      .vgrid { grid-template-columns: 1fr 1fr; }
+      .hist-filtros { grid-template-columns: 1fr 1fr; }
+      .alertas-grid { grid-template-columns: 1fr 1fr; }
+      th,td { font-size: 11px; padding: 6px 8px; }
+    }
   </style>
 </head>
 <body>
+
+<!-- Login overlay -->
+<div id="login-overlay">
+  <div class="login-box">
+    <h2>MC Metales del Caribe</h2>
+    <p>Ingresa la contraseña para continuar</p>
+    <input type="password" id="login-pwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
 <header>
   <div>
     <h1>MC Metales del Caribe</h1>
@@ -85,6 +141,7 @@
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="badge load" id="badge">Cargando...</span>
     <button class="btn btn-gold" onclick="fetchAll()">Actualizar</button>
+    <button class="btn btn-dark btn-sm" onclick="logout()" title="Cerrar sesión" style="font-size:11px;">Salir</button>
   </div>
 </header>
 <main>
@@ -206,6 +263,46 @@
     <div id="hist-count" style="font-size:11px;color:#aaa;margin-top:8px;text-align:right;"></div>
   </div>
 
+  <!-- Alertas Email -->
+  <div class="sec-row" style="margin-top:2rem;">
+    <div class="sec">Alertas por Email — Azure Communication Services</div>
+    <button class="btn btn-dark btn-sm" id="btn-alertas" onclick="verAlertas()">Configurar</button>
+  </div>
+  <div id="alertas-container" style="display:none;">
+    <div class="alertas-panel">
+      <div style="margin-bottom:1rem;">
+        <label style="font-size:10px;color:#888;text-transform:uppercase;display:block;margin-bottom:4px;">Destinatarios (separados por coma)</label>
+        <input type="text" id="a-dest" placeholder="gerencia@mcmetales.com, compras@mcmetales.com" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:7px 10px;font-size:13px;">
+      </div>
+      <div class="alertas-grid">
+        <div>
+          <label>Umbral alto Onza (USD)</label>
+          <input type="number" id="a-alto" placeholder="ej. 2700" step="1">
+        </div>
+        <div>
+          <label>Umbral bajo Onza (USD)</label>
+          <input type="number" id="a-bajo" placeholder="ej. 2400" step="1">
+        </div>
+        <div>
+          <label>Cambio máximo por hora (USD)</label>
+          <input type="number" id="a-hora" placeholder="ej. 30" step="1">
+        </div>
+      </div>
+      <div class="alertas-row">
+        <label class="alertas-toggle">
+          <input type="checkbox" id="a-activo">
+          <span>Alertas activas</span>
+        </label>
+        <button class="btn btn-gold btn-sm" onclick="guardarAlertas()">Guardar configuración</button>
+        <span id="a-estado" style="font-size:12px;color:#aaa;"></span>
+      </div>
+      <div class="alertas-nota">
+        Mínimo 30 minutos entre alertas para evitar spam. El remitente es la dirección de Azure Communication Services configurada en el servidor.
+        Última alerta enviada: <span id="a-ultima">—</span>
+      </div>
+    </div>
+  </div>
+
   <div class="actions">
     <button class="btn btn-dark" onclick="exportExcel()">Exportar Excel</button>
     <button class="btn btn-gold" onclick="fetchAll()">Refrescar precios</button>
@@ -215,10 +312,14 @@
 </main>
 
 <script>
-const API_ONZA     = 'https://mc-metales-precios.azurewebsites.net/api/onza';
-const API_DOLAR    = 'https://mc-metales-precios.azurewebsites.net/api/dolar';
-const API_GUARDAR  = 'https://mc-metales-precios.azurewebsites.net/api/guardar';
-const API_HISTORIAL= 'https://mc-metales-precios.azurewebsites.net/api/historial';
+const API_BASE     = 'https://mc-metales-precios.azurewebsites.net/api';
+const API_ONZA     = API_BASE + '/onza';
+const API_DOLAR    = API_BASE + '/dolar';
+const API_GUARDAR  = API_BASE + '/guardar';
+const API_HISTORIAL= API_BASE + '/historial';
+const API_LOGIN    = API_BASE + '/login';
+const API_ALERTAS  = API_BASE + '/alertas';
+
 const TROY=31.1035, ITAL=0.74;
 const LEYES=[
   {l:'97%',f:.970,r:.025},{l:'96%',f:.960,r:.025},{l:'95%',f:.950,r:.025},
@@ -236,11 +337,46 @@ const VIT=[
 ];
 let prev={o:null,d:null}, cur={o:null,d:null,r:18965.39};
 let leySeleccionada=LEYES[3];
-let tablaVisible=false, historialVisible=false;
+let tablaVisible=false, historialVisible=false, alertasVisible=false;
 let todosRegistros=[], graficaActiva='onza', histChart=null;
 const fmt=n=>Math.round(n).toLocaleString('es-CO');
 const fmtU=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
+// ── Auth ────────────────────────────────────────────────────────────────────
+function getToken(){ return sessionStorage.getItem('mcm_token') || ''; }
+function authHeaders(){ return { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' }; }
+
+async function doLogin(){
+  const pwd = document.getElementById('login-pwd').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!pwd) { errEl.textContent = 'Ingresa la contraseña.'; return; }
+  try {
+    const res = await fetch(API_LOGIN, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password: pwd }) });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Contraseña incorrecta.'; return; }
+    sessionStorage.setItem('mcm_token', data.token);
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('login-pwd').value = '';
+    initApp();
+  } catch(e) {
+    errEl.textContent = 'Error de conexión.';
+  }
+}
+
+function logout(){
+  sessionStorage.removeItem('mcm_token');
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('login-pwd').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+function handleUnauthorized(){
+  sessionStorage.removeItem('mcm_token');
+  document.getElementById('login-overlay').style.display = 'flex';
+}
+
+// ── UI helpers ───────────────────────────────────────────────────────────────
 function setBadge(t,c){const b=document.getElementById('badge');b.textContent=t;b.className='badge '+c;}
 function setSbar(t){document.getElementById('sbar').textContent=t;}
 function setDelta(id,nv,ov,usd){
@@ -367,7 +503,6 @@ async function verHistorial(){
   container.style.display='block';
   btn.textContent='Ocultar historial';
 
-  // Fechas por defecto: último mes
   const hoy=new Date();
   const hace30=new Date(); hace30.setDate(hoy.getDate()-30);
   document.getElementById('f-hasta').value=hoy.toISOString().slice(0,10);
@@ -376,7 +511,8 @@ async function verHistorial(){
   const tbody=document.getElementById('hist-tbody');
   tbody.innerHTML=`<tr><td colspan="5" class="no-data">Cargando...</td></tr>`;
   try {
-    const res=await fetch(API_HISTORIAL);
+    const res=await fetch(API_HISTORIAL, { headers: authHeaders() });
+    if(res.status===401){ handleUnauthorized(); return; }
     const data=await res.json();
     todosRegistros=data.registros||[];
     if(data.precioAyer&&cur.o&&cur.d) mostrarComparativa(data.precioAyer);
@@ -391,7 +527,7 @@ async function verHistorial(){
 async function guardarPrecios(){
   if(!cur.o||!cur.d) return;
   try {
-    await fetch(API_GUARDAR,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({onza:cur.o,dolar:cur.d})});
+    await fetch(API_GUARDAR,{method:'POST',headers:authHeaders(),body:JSON.stringify({onza:cur.o,dolar:cur.d})});
   } catch(e){}
 }
 
@@ -401,7 +537,7 @@ async function fetchAll(){
   const [rO,rD,rH]=await Promise.allSettled([
     fetch(API_ONZA).then(r=>r.json()),
     fetch(API_DOLAR).then(r=>r.json()),
-    fetch(API_HISTORIAL).then(r=>r.json())
+    fetch(API_HISTORIAL,{headers:authHeaders()}).then(async r=>{ if(r.status===401){handleUnauthorized();throw new Error('401');} return r.json(); })
   ]);
   let okO=false,okD=false;
   if(rO.status==='fulfilled'&&rO.value.bid){
@@ -527,11 +663,68 @@ function copiar(){
   navigator.clipboard.writeText(txt).then(()=>setSbar('Precios copiados al portapapeles.'));
 }
 
-document.getElementById('fecha').textContent=
-  new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-fetchAll();
-setInterval(fetchAll,5*60*1000);
-setInterval(guardarPrecios,30*60*1000);
+// ── Alertas ──────────────────────────────────────────────────────────────────
+function verAlertas(){
+  alertasVisible=!alertasVisible;
+  const container=document.getElementById('alertas-container');
+  const btn=document.getElementById('btn-alertas');
+  if(!alertasVisible){ container.style.display='none'; btn.textContent='Configurar'; return; }
+  container.style.display='block';
+  btn.textContent='Ocultar';
+  cargarAlertas();
+}
+
+async function cargarAlertas(){
+  try {
+    const res=await fetch(API_ALERTAS, { headers: authHeaders() });
+    if(res.status===401){ handleUnauthorized(); return; }
+    const cfg=await res.json();
+    document.getElementById('a-dest').value=cfg.destinatarios||'';
+    document.getElementById('a-alto').value=cfg.umbralAlto||'';
+    document.getElementById('a-bajo').value=cfg.umbralBajo||'';
+    document.getElementById('a-hora').value=cfg.cambioMaxHora||'';
+    document.getElementById('a-activo').checked=cfg.activo===true;
+    document.getElementById('a-ultima').textContent=cfg.ultimaAlerta
+      ? new Date(cfg.ultimaAlerta).toLocaleString('es-CO') : '—';
+  } catch(e){}
+}
+
+async function guardarAlertas(){
+  const estado=document.getElementById('a-estado');
+  estado.textContent='Guardando...';
+  try {
+    const res=await fetch(API_ALERTAS, {
+      method:'POST', headers: authHeaders(),
+      body: JSON.stringify({
+        destinatarios: document.getElementById('a-dest').value.trim(),
+        umbralAlto: document.getElementById('a-alto').value,
+        umbralBajo: document.getElementById('a-bajo').value,
+        cambioMaxHora: document.getElementById('a-hora').value,
+        activo: document.getElementById('a-activo').checked
+      })
+    });
+    if(res.status===401){ handleUnauthorized(); return; }
+    estado.textContent='Guardado.';
+    setTimeout(()=>{ estado.textContent=''; }, 3000);
+  } catch(e){
+    estado.textContent='Error al guardar.';
+  }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+function initApp(){
+  document.getElementById('fecha').textContent=
+    new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  fetchAll();
+  setInterval(fetchAll,5*60*1000);
+  setInterval(guardarPrecios,30*60*1000);
+}
+
+// Al cargar: verificar sesión existente
+if(getToken()){
+  document.getElementById('login-overlay').style.display='none';
+  initApp();
+}
 </script>
 </body>
 </html>

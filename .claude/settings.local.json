@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(az functionapp list:*)",
+      "Bash(az functionapp config appsettings:*)",
+      "Bash(az communication list:*)",
+      "Bash(az config:*)",
+      "Bash(az resource:*)",
+      "Bash(az communication create:*)",
+      "Bash(az communication email create:*)",
+      "Bash(az communication email domain:*)",
+      "Bash(az communication update:*)",
+      "Bash(az communication list-key:*)",
+      "Bash(npm install:*)",
+      "Bash(npm list:*)",
+      "Bash(func azure:*)"
+    ]
+  }
+}
