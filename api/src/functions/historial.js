@@ -14,7 +14,7 @@ app.http('historial', {
 
             // Últimos 15 días
             const desde = new Date();
-            desde.setDate(desde.getDate() - 15);
+            desde.setFullYear(desde.getFullYear() - 1);
 
             const registros = [];
             const entidades = client.listEntities();
