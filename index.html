@@ -28,24 +28,31 @@
     .dn { background: #f4e6e6; color: #6a2d2d; }
     .sec { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin: 1.5rem 0 0.75rem; }
     .vgrid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1.5rem; }
-    .vc { background: #fff; border-radius: 8px; padding: 0.75rem 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .vc { background: #fff; border-radius: 8px; padding: 0.75rem 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); cursor: pointer; transition: box-shadow 0.2s; }
+    .vc:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
     .vc .vl { font-size: 10px; color: #888; text-transform: uppercase; }
     .vc .vv { font-size: 16px; font-weight: bold; color: #1a1a1a; margin-top: 4px; }
+    .vc .vhint { font-size: 10px; color: #bbb; margin-top: 3px; }
     table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
     th { background: #1a1a1a; color: #FFD700; font-size: 11px; padding: 10px 12px; text-align: right; }
     th:first-child { text-align: left; }
     td { padding: 7px 12px; text-align: right; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
     td:first-child { text-align: left; font-weight: bold; color: #555; }
-    tr:hover td { background: #fafafa; }
+    tr.fila-ley { cursor: pointer; }
+    tr.fila-ley:hover td { background: #fafafa; }
     tr.hl td { background: #f0faf0; }
     tr.hl td:first-child { color: #2d6a2d; }
+    tr.fila-detalle td { background: #f9f9f9; }
+    .detalle-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; padding: 8px 0; }
+    .detalle-item .di-label { font-size: 10px; color: #888; text-transform: uppercase; }
+    .detalle-item .di-val { font-size: 15px; font-weight: bold; color: #1a1a1a; margin-top: 3px; }
     .actions { display: flex; gap: 10px; margin-top: 1.5rem; flex-wrap: wrap; }
     .btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; font-weight: bold; }
     .btn-gold { background: #FFD700; color: #1a1a1a; }
     .btn-dark { background: #1a1a1a; color: #FFD700; }
     .btn:hover { opacity: 0.85; }
     .sbar { font-size: 11px; color: #aaa; margin-top: 1rem; text-align: right; padding-bottom: 2rem; }
-    @media(max-width:600px) { .grid3,.vgrid { grid-template-columns: 1fr 1fr; } th,td { font-size: 11px; padding: 6px 8px; } }
+    @media(max-width:600px) { .grid3,.vgrid { grid-template-columns: 1fr 1fr; } th,td { font-size: 11px; padding: 6px 8px; } .detalle-grid { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
 <body>
@@ -81,7 +88,7 @@
     </div>
   </div>
 
-  <div class="sec">Vitrina 94.5% — Precios de compra por categoría</div>
+  <div class="sec">Precios de compra por ley</div>
   <div class="vgrid" id="vgrid"></div>
 
   <div class="sec">Tabla completa — ORO descontado regalías + retefuente</div>
@@ -187,13 +194,14 @@ async function fetchAll(){
 function render(){
   const {o,d,r}=cur;
   const intl=(o*d)/TROY;
+
+  // Tabla completa con filas colapsables
   const tb=document.getElementById('tbody');
   tb.innerHTML='';
   LEYES.forEach(l=>{
     const base=intl*l.f,rete=base*l.r,neto=base-rete-r,ital=neto*ITAL;
     const trHead=document.createElement('tr');
-    if(l.hl) trHead.className='hl';
-    trHead.style.cursor='pointer';
+    trHead.className='fila-ley'+(l.hl?' hl':'');
     trHead.innerHTML=`
       <td>${l.l} <span style="font-size:10px;color:#aaa;">▼</span></td>
       <td>$ ${fmt(intl)}</td>
@@ -203,14 +211,15 @@ function render(){
       <td>$ ${fmt(ital)}</td>
     `;
     const trDetail=document.createElement('tr');
+    trDetail.className='fila-detalle';
     trDetail.style.display='none';
     trDetail.innerHTML=`
-      <td colspan="6" style="background:#f9f9f9;padding:12px 20px;">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-          <div><div style="font-size:10px;color:#888;text-transform:uppercase;">Base Puro neto</div><div style="font-size:16px;font-weight:bold;">$ ${fmt(neto)}</div></div>
-          <div><div style="font-size:10px;color:#888;text-transform:uppercase;">Italiano (×0.74)</div><div style="font-size:16px;font-weight:bold;">$ ${fmt(ital)}</div></div>
-          <div><div style="font-size:10px;color:#888;text-transform:uppercase;">Retefuente</div><div style="font-size:16px;font-weight:bold;">$ ${fmt(rete)}</div></div>
-          <div><div style="font-size:10px;color:#888;text-transform:uppercase;">Base bruta</div><div style="font-size:16px;font-weight:bold;">$ ${fmt(base)}</div></div>
+      <td colspan="6" style="padding:12px 20px;">
+        <div class="detalle-grid">
+          <div class="detalle-item"><div class="di-label">Base Puro neto</div><div class="di-val">$ ${fmt(neto)}</div></div>
+          <div class="detalle-item"><div class="di-label">Italiano (×0.74)</div><div class="di-val">$ ${fmt(ital)}</div></div>
+          <div class="detalle-item"><div class="di-label">Retefuente</div><div class="di-val">$ ${fmt(rete)}</div></div>
+          <div class="detalle-item"><div class="di-label">Base bruta</div><div class="di-val">$ ${fmt(base)}</div></div>
         </div>
       </td>
     `;
@@ -223,13 +232,25 @@ function render(){
     tb.appendChild(trDetail);
   });
 
-  const ref=(intl*.945)-(intl*.945*.025)-r;
+  // Tarjetas por ley con toggle Puro/Italiano
   const vg=document.getElementById('vgrid');
   vg.innerHTML='';
-  VIT.forEach(v=>{
+  LEYES.forEach(l=>{
+    const base=intl*l.f,rete=base*l.r,neto=base-rete-r,ital=neto*ITAL;
     const c=document.createElement('div');
     c.className='vc';
-    c.innerHTML=`<div class="vl">${v.n}</div><div class="vv">$ ${fmt(ref*v.k)}</div>`;
+    c.innerHTML=`
+      <div class="vl">${l.l}</div>
+      <div class="vv">$ ${fmt(neto)}</div>
+      <div class="vhint">Base Puro · toca para ver Italiano</div>
+    `;
+    c.addEventListener('click',()=>{
+      const vv=c.querySelector('.vv');
+      const hint=c.querySelector('.vhint');
+      const isPuro=hint.textContent.includes('Italiano');
+      vv.textContent='$ '+(isPuro?fmt(ital):fmt(neto));
+      hint.textContent=isPuro?'Italiano · toca para ver Puro':'Base Puro · toca para ver Italiano';
+    });
     vg.appendChild(c);
   });
 }
@@ -276,8 +297,11 @@ function copiar(){
   if(!o||!d) return;
   const intl=(o*d)/TROY;
   const ref=(intl*.945)-(intl*.945*.025)-r;
-  let txt=`MC Metales del Caribe — ${new Date().toLocaleString('es-CO')}\nOnza Bid: $ ${fmtU(o)} USD | Dólar compra: $ ${fmt(d)} COP\nInternacional: $ ${fmt(intl)}/g\n\nVITRINA 94.5%:\n`;
-  VIT.forEach(v=>{txt+=`  ${v.n}: $ ${fmt(ref*v.k)}\n`;});
+  let txt=`MC Metales del Caribe — ${new Date().toLocaleString('es-CO')}\nOnza Bid: $ ${fmtU(o)} USD | Dólar compra: $ ${fmt(d)} COP\nInternacional: $ ${fmt(intl)}/g\n\nPRECIOS POR LEY:\n`;
+  LEYES.forEach(l=>{
+    const base=intl*l.f,rete=base*l.r,neto=base-rete-r;
+    txt+=`  ${l.l}: $ ${fmt(neto)} (Italiano: $ ${fmt(neto*ITAL)})\n`;
+  });
   navigator.clipboard.writeText(txt).then(()=>setSbar('Precios copiados al portapapeles.'));
 }
 
