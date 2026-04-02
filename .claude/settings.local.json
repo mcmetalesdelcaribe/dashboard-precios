@@ -13,7 +13,12 @@
       "Bash(az communication list-key:*)",
       "Bash(npm install:*)",
       "Bash(npm list:*)",
-      "Bash(func azure:*)"
+      "Bash(func azure:*)",
+      "Bash(npm init:*)",
+      "Bash(node generate-icons.js)",
+      "Bash(rm generate-icons.js)",
+      "Bash(rm package.json)",
+      "Bash(rm -rf node_modules)"
     ]
   }
 }
