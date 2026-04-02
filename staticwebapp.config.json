@@ -1,0 +1,10 @@
+{
+  "mimeTypes": {
+    ".json": "application/json",
+    ".webmanifest": "application/manifest+json",
+    ".js": "application/javascript"
+  },
+  "globalHeaders": {
+    "Service-Worker-Allowed": "/"
+  }
+}
