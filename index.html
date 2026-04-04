@@ -29,7 +29,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #f5f5f5; color: #1a1a1a; }
     header { background: #1a1a1a; color: #FFD700; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-    header h1 { font-size: 18px; }
+    header h1 { font-size: 18px; } header img { filter: brightness(1); }
     header p { font-size: 12px; color: #aaa; margin-top: 2px; }
     .badge { font-size: 11px; padding: 4px 12px; border-radius: 999px; font-weight: bold; }
     .live { background: #2d6a2d; color: #90ee90; }
@@ -144,7 +144,7 @@
 <!-- Login overlay -->
 <div id="login-overlay">
   <div class="login-box">
-    <h2>MC Metales del Caribe</h2>
+    <img src="/icons/logo-mc.png" alt="MC Metales del Caribe" style="height:48px;margin-bottom:8px;">
     <p>Ingresa la contraseña para continuar</p>
     <input type="password" id="login-pwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     <button onclick="doLogin()">Ingresar</button>
@@ -154,7 +154,7 @@
 
 <header>
   <div>
-    <h1>MC Metales del Caribe</h1>
+    <img src="/icons/logo-mc.png" alt="MC Metales del Caribe" style="height:40px;display:block;">
     <p id="fecha"></p>
   </div>
   <div style="display:flex;align-items:center;gap:10px;">

@@ -18,7 +18,20 @@
       "Bash(node generate-icons.js)",
       "Bash(rm generate-icons.js)",
       "Bash(rm package.json)",
-      "Bash(rm -rf node_modules)"
+      "Bash(rm -rf node_modules)",
+      "Bash(az functionapp cors add:*)",
+      "Bash(az staticwebapp hostname list:*)",
+      "Bash(az staticwebapp list:*)",
+      "Bash(node -e \"require\\('sharp'\\) && console.log\\('sharp ok'\\)\")",
+      "Bash(python -c \"from PIL import Image; print\\('PIL ok'\\)\")",
+      "Bash(python3 -c \"from PIL import Image; print\\('PIL ok'\\)\")",
+      "Bash(curl -L \"https://mcmetalesdelcaribe.com.co/wp-content/uploads/2021/01/cropped-logo-blanco-mc-horizontal.png\" -o /tmp/logo-mc.png)",
+      "Read(//tmp/**)",
+      "Bash(node --experimental-vm-modules generate-icons.mjs)",
+      "Bash(node generate-icons.mjs)",
+      "Bash(cp /tmp/logo-mc.png /c/Users/user/AppData/Local/Temp/logo-mc.png)",
+      "Bash(node C:/Users/user/dashboard-precios/generate-icons.cjs)",
+      "Bash(node -e ':*)"
     ]
   }
 }
