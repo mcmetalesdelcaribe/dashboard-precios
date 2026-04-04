@@ -589,7 +589,7 @@ function crearGraficaTradingView(){
     rightPriceScale:{borderColor:'#2a2a2a'},
     timeScale:{borderColor:'#2a2a2a',timeVisible:true,secondsVisible:false,
       fixLeftEdge:false,fixRightEdge:false,
-      barSpacing:6,rightOffset:5},
+      barSpacing:6,minBarSpacing:2,rightOffset:3},
     handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
     handleScale:{mouseWheel:true,pinch:true,axisPressedMouseMove:true},
   });
@@ -669,8 +669,9 @@ function dibujarGraficaUnificada(){
       axisLabelVisible:true,title:'',
     });
   }
-  graficaChartInst.timeScale().fitContent();
-  graficaChartInst.timeScale().applyOptions({rightOffset:5});
+  // Anclar última vela al borde derecho con barSpacing fijo (no fitContent que estira las velas)
+  graficaChartInst.timeScale().applyOptions({barSpacing:6,rightOffset:3});
+  graficaChartInst.timeScale().scrollToRealTime();
   actualizarInfoGrafica(candles);
 }
 
