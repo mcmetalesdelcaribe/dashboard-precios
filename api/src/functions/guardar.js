@@ -178,10 +178,10 @@ app.http('guardar', {
 
             // Evitar duplicados: omitir si ya existe un registro en los últimos 30 min
             const ahora = new Date();
-            const cincoAtras = new Date(ahora.getTime() - 5 * 60 * 1000);
-            const rowKeyMin = cincoAtras.toISOString().replace(/[:.]/g, '-');
+            const treintaAtras = new Date(ahora.getTime() - 30 * 60 * 1000);
+            const rowKeyMin = treintaAtras.toISOString().replace(/[:.]/g, '-');
             const partHoy = ahora.toISOString().slice(0, 10);
-            const partAyer = cincoAtras.toISOString().slice(0, 10);
+            const partAyer = treintaAtras.toISOString().slice(0, 10);
 
             let yaExiste = false;
             for (const pk of [...new Set([partAyer, partHoy])]) {

@@ -80,10 +80,19 @@
     .hist-table th { background: #1a1a1a; color: #FFD700; padding: 8px 10px; text-align: left; font-size: 11px; }
     .hist-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; text-align: left; cursor: default; }
     .hist-table tr:hover td { background: #fafafa; }
-    .chart-container { background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1rem; }
+    .chart-container { background: #1a1a1a; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1rem; }
     .chart-tabs { display: flex; gap: 8px; margin-bottom: 1rem; }
-    .chart-tab { padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; background: #f0f0f0; color: #888; }
-    .chart-tab.active { background: #1a1a1a; color: #FFD700; }
+    .chart-tab { padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; background: #333; color: #666; }
+    .chart-tab.active { background: #FFD700; color: #1a1a1a; }
+    .rt-charts { background: #1a1a1a; border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; }
+    .rt-range-btns { display: flex; gap: 6px; }
+    .rt-range-btn { padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: bold; cursor: pointer; border: none; background: #333; color: #666; }
+    .rt-range-btn.active { background: #FFD700; color: #1a1a1a; }
+    .rt-chart-wrap { margin-bottom: 1.25rem; }
+    .rt-chart-wrap:last-child { margin-bottom: 0; }
+    .rt-chart-meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .rt-chart-name { font-size: 12px; font-weight: bold; letter-spacing: 0.03em; }
+    .rt-chart-mm { font-size: 11px; color: #555; }
     .actions { display: flex; gap: 10px; margin-top: 1.5rem; flex-wrap: wrap; }
     .btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; font-weight: bold; }
     .btn-gold { background: #FFD700; color: #1a1a1a; }
@@ -226,6 +235,38 @@
   </div>
 
   <div class="sec-row" style="margin-top:2rem;">
+    <div class="sec">Gráficas — tiempo real</div>
+    <div class="rt-range-btns">
+      <button class="rt-range-btn" onclick="setRtRango(1,this)">1H</button>
+      <button class="rt-range-btn active" onclick="setRtRango(2,this)">2H</button>
+      <button class="rt-range-btn" onclick="setRtRango(0,this)">1D</button>
+    </div>
+  </div>
+  <div class="rt-charts">
+    <div class="rt-chart-wrap">
+      <div class="rt-chart-meta">
+        <span class="rt-chart-name" style="color:#FFD700;">Onza Troy (USD)</span>
+        <span class="rt-chart-mm" id="rt-onza-mm">—</span>
+      </div>
+      <div style="position:relative;height:120px;"><canvas id="rt-onza"></canvas></div>
+    </div>
+    <div class="rt-chart-wrap">
+      <div class="rt-chart-meta">
+        <span class="rt-chart-name" style="color:#4a9eff;">Dólar Compra (COP)</span>
+        <span class="rt-chart-mm" id="rt-dolar-mm">—</span>
+      </div>
+      <div style="position:relative;height:120px;"><canvas id="rt-dolar"></canvas></div>
+    </div>
+    <div class="rt-chart-wrap">
+      <div class="rt-chart-meta">
+        <span class="rt-chart-name" style="color:#90ee90;">Internacional (COP/g)</span>
+        <span class="rt-chart-mm" id="rt-intl-mm">—</span>
+      </div>
+      <div style="position:relative;height:120px;"><canvas id="rt-intl"></canvas></div>
+    </div>
+  </div>
+
+  <div class="sec-row" style="margin-top:2rem;">
     <div class="sec">Historial de precios — último año</div>
     <button class="btn btn-dark btn-sm" id="btn-historial" onclick="verHistorial()">Ver historial</button>
   </div>
@@ -361,6 +402,7 @@ let prev={o:null,d:null}, cur={o:null,d:null,r:18965.39};
 let leySeleccionada=LEYES[3];
 let tablaVisible=false, historialVisible=false, alertasVisible=false;
 let todosRegistros=[], graficaActiva='onza', histChart=null, histLimite=10;
+let rtBuffer=[], rtRangoHoras=2, rtCharts={};
 const fmt=n=>Math.round(n).toLocaleString('es-CO');
 const fmtU=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
@@ -492,13 +534,98 @@ function dibujarGrafica(registros){
     },
     options:{
       responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#222',titleColor:'#888',bodyColor:'#fff',borderColor:'#333',borderWidth:1,
+          callbacks:{label:ctx=>' '+ctx.raw.toLocaleString('es-CO')}
+        }
+      },
       scales:{
-        x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:8,font:{size:10}},grid:{display:false}},
-        y:{ticks:{font:{size:10}},grid:{color:'#f0f0f0'}}
+        x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:8,font:{size:10},color:'#666'},grid:{color:'#2a2a2a'},border:{display:false}},
+        y:{ticks:{font:{size:10},color:'#666'},grid:{color:'#2a2a2a'},border:{display:false}}
       }
     }
   });
+}
+
+// ── Gráficas en tiempo real ──────────────────────────────────────────────────
+function rtFmtFn(color){
+  // Devuelve formateador y config tooltip según el chart
+  if(color==='#FFD700') return v=>v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return v=>Math.round(v).toLocaleString('es-CO');
+}
+
+function buildRtChart(canvasId, color){
+  const fmt=rtFmtFn(color);
+  return new Chart(document.getElementById(canvasId).getContext('2d'),{
+    type:'line',
+    data:{labels:[],datasets:[{data:[],borderColor:color,backgroundColor:color+'15',borderWidth:1.5,pointRadius:0,tension:0.2,fill:true}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#222',titleColor:'#888',bodyColor:'#fff',borderColor:'#333',borderWidth:1,
+          callbacks:{
+            title:items=>items[0].label,
+            label:ctx=>' $ '+fmt(ctx.raw)
+          }
+        }
+      },
+      scales:{
+        x:{ticks:{color:'#555',font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:6},grid:{color:'#2a2a2a'},border:{display:false}},
+        y:{ticks:{color:'#555',font:{size:9},callback:v=>'$'+fmt(v)},grid:{color:'#2a2a2a'},border:{display:false}}
+      }
+    }
+  });
+}
+
+function initRtCharts(){
+  rtCharts.onza = buildRtChart('rt-onza','#FFD700');
+  rtCharts.dolar = buildRtChart('rt-dolar','#4a9eff');
+  rtCharts.intl  = buildRtChart('rt-intl','#90ee90');
+}
+
+function setRtRango(horas, btn){
+  rtRangoHoras=horas;
+  document.querySelectorAll('.rt-range-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  rtDraw();
+}
+
+function rtGetSlice(){
+  if(rtRangoHoras===0) return rtBuffer;
+  const cutoff=Date.now()-rtRangoHoras*60*60*1000;
+  return rtBuffer.filter(p=>p.ts>=cutoff);
+}
+
+function rtPush(o, d){
+  const ts=Date.now();
+  const label=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',timeZone:'America/Bogota'});
+  rtBuffer.push({ts,o,d,label});
+  if(rtBuffer.length>1440) rtBuffer.shift();
+  rtDraw();
+}
+
+function rtDraw(){
+  if(!rtCharts.onza||rtBuffer.length===0) return;
+  const slice=rtGetSlice();
+  if(slice.length===0) return;
+  const labels=slice.map(p=>p.label);
+  const onzas=slice.map(p=>p.o);
+  const dolars=slice.map(p=>p.d);
+  const intls=slice.map(p=>Math.round((p.o*p.d)/TROY));
+  function upd(chart, data, mmId, fmt){
+    chart.data.labels=labels;
+    chart.data.datasets[0].data=data;
+    chart.update('none');
+    const mn=Math.min(...data),mx=Math.max(...data);
+    document.getElementById(mmId).textContent='Min '+fmt(mn)+'  ·  Max '+fmt(mx);
+  }
+  upd(rtCharts.onza, onzas, 'rt-onza-mm', v=>'$ '+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));
+  upd(rtCharts.dolar, dolars, 'rt-dolar-mm', v=>'$ '+Math.round(v).toLocaleString('es-CO'));
+  upd(rtCharts.intl, intls, 'rt-intl-mm', v=>'$ '+Math.round(v).toLocaleString('es-CO'));
 }
 
 function renderTablaHist(registros){
@@ -610,7 +737,7 @@ async function fetchAll(){
   if(okO&&okD){ setBadge('En vivo','live'); guardarPrecios(); }
   else if(okO||okD) setBadge('Parcial','man');
   else setBadge('Sin conexión','err');
-  if(cur.o&&cur.d) render();
+  if(cur.o&&cur.d){ render(); rtPush(cur.o,cur.d); }
   setSbar(`Actualizado: ${new Date().toLocaleString('es-CO')} · Refresco automático cada 1 min`);
 }
 
@@ -754,9 +881,10 @@ async function guardarAlertas(){
 function initApp(){
   document.getElementById('fecha').textContent=
     new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  initRtCharts();
   fetchAll();
   setInterval(fetchAll,60*1000);
-  setInterval(guardarPrecios,5*60*1000);
+  setInterval(guardarPrecios,30*60*1000);
 }
 
 // Al cargar: verificar sesión existente
