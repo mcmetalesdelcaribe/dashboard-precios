@@ -24,7 +24,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #f5f5f5; color: #1a1a1a; }
@@ -571,8 +571,12 @@ let graficaChartInst=null,graficaCandleSeries=null,graficaVolumeSeries=null,graf
 
 function crearGraficaTradingView(){
   const el=document.getElementById('precio-chart');
+  const w=el.clientWidth||el.offsetWidth||el.parentElement.clientWidth||600;
+  const h=el.clientHeight||el.offsetHeight||340;
+  console.log('[MCM] crearGraficaTradingView — dim:', w, 'x', h,
+    '| LightweightCharts:', typeof LightweightCharts,
+    '| version:', LightweightCharts.version ? LightweightCharts.version() : 'n/a');
   if(graficaChartInst){graficaChartInst.remove();graficaChartInst=null;}
-  const w=el.clientWidth||el.offsetWidth||600;
   graficaChartInst=LightweightCharts.createChart(el,{
     width:w,height:340,
     layout:{background:{color:'#1a1a1a'},textColor:'#888'},
@@ -600,6 +604,18 @@ function crearGraficaTradingView(){
   graficaChartInst.priceScale('vol').applyOptions({
     scaleMargins:{top:0.82,bottom:0},drawTicks:false,borderVisible:false,
   });
+  // Datos de prueba para verificar que el chart renderiza
+  const now=Math.floor(Date.now()/1000);
+  const testCandles=[
+    {time:now-300,open:3100,high:3110,low:3095,close:3105},
+    {time:now-240,open:3105,high:3115,low:3100,close:3108},
+    {time:now-180,open:3108,high:3120,low:3104,close:3118},
+    {time:now-120,open:3118,high:3122,low:3112,close:3114},
+    {time:now-60, open:3114,high:3125,low:3110,close:3122},
+  ];
+  graficaCandleSeries.setData(testCandles);
+  graficaVolumeSeries.setData(testCandles.map(c=>({time:c.time,value:10,color:'#26a69a55'})));
+  console.log('[MCM] datos de prueba cargados — si ves la gráfica, el chart funciona y el problema es en los datos reales');
   // Crosshair → tooltip OHLC en esquina superior izquierda
   graficaChartInst.subscribeCrosshairMove(param=>{
     const el=document.getElementById('ohlc-tooltip');
@@ -637,6 +653,9 @@ function dibujarGraficaUnificada(){
     priceFormat:{type:'price',precision:isUSD?2:0,minMove:isUSD?0.01:1},
   });
   const {candles,volumes}=getGraficaData();
+  console.log('[MCM] dibujarGraficaUnificada — tab:', graficaTab, '| periodo:', graficaPeriodo,
+    '| rtBuffer.length:', rtBuffer.length, '| todosRegistros.length:', todosRegistros.length,
+    '| candles:', candles.length);
   graficaCandleSeries.setData(candles);
   graficaVolumeSeries.setData(volumes);
   // Línea de precio actual (se actualiza cada minuto vía fetchAll)
@@ -660,7 +679,7 @@ function verGrafica(){
   c.style.display=graficaVisible?'block':'none';
   b.textContent=graficaVisible?'Ocultar gráfica':'Ver gráfica';
   // setTimeout permite que el DOM renderice el contenedor antes de medir clientWidth
-  if(graficaVisible) setTimeout(dibujarGraficaUnificada,10);
+  if(graficaVisible) setTimeout(dibujarGraficaUnificada,150);
 }
 
 function setGraficaTab(tab,btn){
