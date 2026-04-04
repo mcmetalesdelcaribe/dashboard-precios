@@ -7,7 +7,7 @@
 
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#1a1a1a">
+  <meta name="theme-color" content="#0a0a0a">
 
   <!-- iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -23,127 +23,347 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
 
+  <!-- Tipografía IBM Plex -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+
   <style>
+    :root {
+      --bg:     #0a0a0a;
+      --card:   #111111;
+      --border: #222222;
+      --text:   #ffffff;
+      --muted:  #888888;
+      --dim:    #444444;
+      --gold:   #FFD700;
+      --up:     #26a69a;
+      --dn:     #ef5350;
+      --mono:   'IBM Plex Mono', monospace;
+      --sans:   'IBM Plex Sans', Arial, sans-serif;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background: #f5f5f5; color: #1a1a1a; }
-    header { background: #1a1a1a; color: #FFD700; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-    header h1 { font-size: 18px; } header img { filter: brightness(1); }
-    header p { font-size: 12px; color: #aaa; margin-top: 2px; }
-    .badge { font-size: 11px; padding: 4px 12px; border-radius: 999px; font-weight: bold; }
-    .live { background: #2d6a2d; color: #90ee90; }
-    .err  { background: #6a2d2d; color: #ffaaaa; }
-    .load { background: #444; color: #ccc; }
-    .man  { background: #6a5a2d; color: #ffd700; }
-    main { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; }
-    .grid4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 1.5rem; }
-    .card { background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-    .card label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px; }
-    .card .big { font-size: 22px; font-weight: bold; color: #1a1a1a; }
-    .card .sub { font-size: 10px; color: #aaa; margin-top: 3px; }
-    .card input[type=number] { width: 100%; border: 1px solid #ddd; border-radius: 6px; padding: 6px 10px; font-size: 13px; margin-top: 8px; }
-    .delta { display: inline-block; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 999px; margin-left: 4px; }
-    .up { background: #e6f4e6; color: #2d6a2d; }
-    .dn { background: #f4e6e6; color: #6a2d2d; }
-    .comp-card { background: #1a1a1a; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-    .comp-card label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px; }
-    .comp-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #333; }
-    .comp-row:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-    .comp-label { font-size: 10px; color: #aaa; text-transform: uppercase; }
-    .comp-val { font-size: 14px; font-weight: bold; color: #FFD700; }
-    .comp-delta { font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 999px; }
-    .comp-up { background: #2d6a2d; color: #90ee90; }
-    .comp-dn { background: #6a2d2d; color: #ffaaaa; }
-    .sec { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin: 1.5rem 0 0.75rem; }
-    .sec-row { display: flex; align-items: center; justify-content: space-between; margin: 1.5rem 0 0.75rem; }
-    .sec-row .sec { margin: 0; }
-    .ley-activa { font-size: 12px; color: #1a1a1a; font-weight: bold; background: #FFD700; padding: 3px 10px; border-radius: 999px; }
-    .vgrid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1.5rem; }
-    .vc { background: #fff; border-radius: 8px; padding: 0.75rem 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    .vc .vl { font-size: 10px; color: #888; text-transform: uppercase; }
-    .vc .vv { font-size: 16px; font-weight: bold; color: #1a1a1a; margin-top: 4px; }
-    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-    th { background: #1a1a1a; color: #FFD700; font-size: 11px; padding: 10px 12px; text-align: right; }
-    th:first-child { text-align: left; }
-    td { padding: 7px 12px; text-align: right; font-size: 13px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
-    td:first-child { text-align: left; font-weight: bold; color: #555; }
-    tr:hover td { background: #fffbe6; }
-    tr.hl td { background: #f0faf0; }
-    tr.hl td:first-child { color: #2d6a2d; }
-    tr.selected td { background: #FFD700 !important; color: #1a1a1a !important; }
-    tr.selected td:first-child { color: #1a1a1a !important; }
-    .hist-filtros { background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1rem; display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
-    .hist-filtros label { font-size: 10px; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
-    .hist-filtros input, .hist-filtros select { width: 100%; border: 1px solid #ddd; border-radius: 6px; padding: 7px 10px; font-size: 13px; }
-    .hist-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 0.5rem; }
-    .hist-table th { background: #1a1a1a; color: #FFD700; padding: 8px 10px; text-align: left; font-size: 11px; }
-    .hist-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; text-align: left; cursor: default; }
-    .hist-table tr:hover td { background: #fafafa; }
-    .chart-container { background: #1a1a1a; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1rem; }
-    #precio-chart { width: 100%; height: 340px; }
-    .chart-tabs { display: flex; gap: 8px; margin-bottom: 1rem; }
-    .chart-tab { padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; background: #333; color: #666; }
-    .chart-tab.active { background: #FFD700; color: #1a1a1a; }
-    .periodo-btns { display:flex; gap:6px; }
-    .periodo-btn { padding:4px 12px; border-radius:999px; font-size:11px; font-weight:bold; cursor:pointer; border:none; background:#333; color:#666; }
-    .periodo-btn.active { background:#FFD700; color:#1a1a1a; }
-    .gi-bar { margin-bottom:1rem; padding-bottom:0.75rem; border-bottom:1px solid #2a2a2a; }
-    .gi-label { font-size:10px; color:#555; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px; }
-    .gi-precio { font-size:22px; font-weight:bold; color:#fff; margin-right:6px; }
-    .gi-change { font-size:13px; font-weight:bold; }
-    .actions { display: flex; gap: 10px; margin-top: 1.5rem; flex-wrap: wrap; }
-    .btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; font-weight: bold; }
-    .btn-gold { background: #FFD700; color: #1a1a1a; }
-    .btn-dark { background: #1a1a1a; color: #FFD700; }
-    .btn-sm { padding: 6px 12px; font-size: 12px; }
-    .btn:hover { opacity: 0.85; }
-    .sbar { font-size: 11px; color: #aaa; margin-top: 1rem; text-align: right; padding-bottom: 2rem; }
-    .no-data { text-align: center; color: #aaa; padding: 20px; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
 
-    /* Alertas panel */
-    .alertas-panel { background: #fff; border-radius: 10px; padding: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1rem; }
-    .alertas-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
-    .alertas-grid label { font-size: 10px; color: #888; text-transform: uppercase; display: block; margin-bottom: 4px; }
-    .alertas-grid input { width: 100%; border: 1px solid #ddd; border-radius: 6px; padding: 7px 10px; font-size: 13px; }
-    .alertas-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .alertas-toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
-    .alertas-toggle input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
-    .alertas-nota { font-size: 11px; color: #aaa; margin-top: 8px; }
-
-    /* Login overlay */
+    /* ── LOGIN ─────────────────────────────────────────── */
     #login-overlay {
       position: fixed; inset: 0; z-index: 9999;
-      background: #1a1a1a;
+      background: var(--bg);
       display: flex; align-items: center; justify-content: center;
     }
     .login-box {
-      background: #222; border-radius: 16px; padding: 2.5rem 2rem;
+      background: var(--card); border-radius: 16px; padding: 2.5rem 2rem;
       width: 100%; max-width: 360px; text-align: center;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+      border: 1px solid var(--border);
     }
-    .login-box h2 { color: #FFD700; font-size: 20px; margin-bottom: 4px; }
-    .login-box p { color: #888; font-size: 12px; margin-bottom: 1.5rem; }
+    .login-box p { color: var(--muted); font-size: 12px; margin-bottom: 1.5rem; }
     .login-box input {
       width: 100%; padding: 12px 14px; border-radius: 8px;
-      border: 1px solid #444; background: #333; color: #fff;
-      font-size: 15px; margin-bottom: 12px; text-align: center; letter-spacing: 2px;
+      border: 1px solid #333; background: #1a1a1a; color: var(--text);
+      font-family: var(--mono); font-size: 16px; margin-bottom: 12px;
+      text-align: center; letter-spacing: 4px;
     }
-    .login-box input:focus { outline: none; border-color: #FFD700; }
+    .login-box input:focus { outline: none; border-color: var(--gold); }
     .login-box button {
       width: 100%; padding: 12px; border-radius: 8px; border: none;
-      background: #FFD700; color: #1a1a1a; font-size: 15px; font-weight: bold;
-      cursor: pointer;
+      background: var(--gold); color: #0a0a0a; font-size: 15px;
+      font-weight: 600; font-family: var(--sans); cursor: pointer;
     }
     .login-box button:hover { opacity: 0.9; }
-    .login-error { color: #ffaaaa; font-size: 12px; margin-top: 8px; min-height: 18px; }
+    .login-error { color: var(--dn); font-size: 12px; margin-top: 8px; min-height: 18px; }
 
-    @media(max-width:700px) {
-      .grid4 { grid-template-columns: 1fr 1fr; }
+    /* ── HEADER ────────────────────────────────────────── */
+    header {
+      background: var(--bg); border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem; height: 72px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .hdr-left { display: flex; align-items: center; gap: 14px; }
+    .hdr-right { display: flex; align-items: center; gap: 6px; }
+    .hdr-brand { display: flex; flex-direction: column; gap: 2px; }
+    .hdr-brand-name { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 0.02em; }
+    .hdr-brand-sub { font-size: 10px; color: var(--muted); }
+    .hdr-clock {
+      font-family: var(--mono); font-size: 14px; font-weight: 600;
+      color: var(--muted); padding: 0 16px;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      letter-spacing: 0.05em;
+    }
+    /* Status indicator */
+    .status-wrap {
+      display: flex; align-items: center; gap: 7px;
+      padding: 5px 12px; border: 1px solid var(--border); border-radius: 999px;
+      font-size: 11px; color: var(--muted); font-weight: 500;
+    }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); flex-shrink: 0; }
+    .status-dot.live { background: var(--up); box-shadow: 0 0 8px var(--up); animation: pulse-dot 2s infinite; }
+    .status-dot.err  { background: var(--dn); }
+    .status-dot.man  { background: var(--gold); }
+    .status-dot.load { background: var(--dim); animation: pulse-dot 1s infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    /* Header icon buttons */
+    .hdr-btn {
+      width: 36px; height: 36px; border-radius: 8px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; transition: color .15s, border-color .15s, background .15s;
+      position: relative; flex-shrink: 0;
+    }
+    .hdr-btn:hover { color: var(--text); border-color: #444; background: #1a1a1a; }
+    .hdr-btn.gold-icon:hover { color: var(--gold); border-color: var(--gold); }
+    .hdr-btn[data-tip]:hover::after {
+      content: attr(data-tip);
+      position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%);
+      background: #2a2a2a; color: #fff; font-size: 10px; white-space: nowrap;
+      padding: 3px 8px; border-radius: 4px; pointer-events: none; z-index: 300;
+      font-family: var(--sans); border: 1px solid var(--border);
+    }
+    .hdr-btn.round { border-radius: 50%; }
+    .hdr-btn.spinning svg { animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── HERO BAR ──────────────────────────────────────── */
+    .hero {
+      background: var(--card); border-bottom: 1px solid var(--border);
+      padding: 1.1rem 1.5rem;
+    }
+    .hero-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;
+    }
+    .hero-block { display: flex; flex-direction: column; }
+    .hero-label {
+      font-size: 9px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 5px;
+    }
+    .hero-price {
+      font-family: var(--mono); font-size: 46px; font-weight: 700;
+      color: var(--text); line-height: 1; letter-spacing: -0.02em;
+    }
+    .hero-deltas { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+    .hero-delta { font-family: var(--mono); font-size: 15px; font-weight: 600; }
+    .hero-pct   { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .hero-sep   { width: 1px; height: 56px; background: var(--border); flex-shrink: 0; }
+    .hero-mini  { display: flex; flex-direction: column; gap: 3px; }
+    .hero-mini-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+    .hero-mini-val { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--text); }
+
+    /* ── MAIN ──────────────────────────────────────────── */
+    main { max-width: 1200px; margin: 0 auto; padding: 1.25rem 1rem 2rem; }
+
+    /* ── PRICE CARDS ───────────────────────────────────── */
+    .cards-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1.25rem; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 1rem 1.1rem 0.9rem; position: relative; overflow: visible;
+    }
+    .card-label {
+      font-size: 9px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;
+      padding-right: 20px;
+    }
+    .card-price-row { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
+    .card-price { font-family: var(--mono); font-size: 30px; font-weight: 700; color: var(--text); line-height: 1.1; }
+    .card-delta { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+    .delta-up { color: var(--up); }
+    .delta-dn { color: var(--dn); }
+    .card-src { font-size: 9px; color: #555; margin-top: 6px; }
+    .card-pencil {
+      position: absolute; top: 10px; right: 10px;
+      background: none; border: 1px solid transparent; color: var(--dim);
+      cursor: pointer; font-size: 13px; padding: 2px 5px; border-radius: 4px;
+      line-height: 1; transition: color .15s, border-color .15s;
+    }
+    .card-pencil:hover { color: var(--gold); border-color: var(--border); }
+    .card-input {
+      display: none; margin-top: 10px;
+      width: 100%; background: #1a1a1a; border: 1px solid #333; border-radius: 6px;
+      padding: 6px 10px; font-size: 13px; font-family: var(--mono); color: var(--text);
+    }
+    .card-input:focus { outline: none; border-color: var(--gold); }
+    .card-input.visible { display: block; }
+    /* Comp card */
+    .comp-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 1rem 1.1rem 0.9rem;
+    }
+    .comp-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 7px 0; border-bottom: 1px solid var(--border);
+    }
+    .comp-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .comp-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .comp-val { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--gold); }
+    .comp-delta { font-family: var(--mono); font-size: 11px; font-weight: 700; }
+    .comp-up { color: var(--up); }
+    .comp-dn { color: var(--dn); }
+
+    /* ── SECTION HEADER ────────────────────────────────── */
+    .sec-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+    .sec-title { font-size: 9px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
+    .ley-activa {
+      font-family: var(--mono); font-size: 11px; color: #0a0a0a;
+      font-weight: 700; background: var(--gold); padding: 3px 10px; border-radius: 999px;
+    }
+
+    /* ── CATEGORY GRID ─────────────────────────────────── */
+    .vgrid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 1.5rem; }
+    .vc {
+      background: #0e0e0e; border: 1px solid var(--border);
+      border-left: 3px solid var(--gold);
+      border-radius: 8px; padding: 0.75rem 1rem; cursor: default;
+    }
+    .vc .vl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
+    .vc .vv { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--text); }
+
+    /* ── TABS NAV ──────────────────────────────────────── */
+    .tabs-bar {
+      display: flex; gap: 4px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 5px; margin-bottom: 1.25rem;
+    }
+    .tab-btn {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 8px 10px; border-radius: 7px; border: none; background: transparent;
+      color: var(--muted); font-family: var(--sans); font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--text); background: #1a1a1a; }
+    .tab-btn.active { background: var(--gold); color: #0a0a0a; font-weight: 600; }
+    .tab-icon { font-size: 14px; line-height: 1; }
+
+    /* ── TABLE ─────────────────────────────────────────── */
+    table {
+      width: 100%; border-collapse: collapse; background: var(--card);
+      border-radius: 10px; overflow: hidden; border: 1px solid var(--border);
+    }
+    th {
+      background: #0d0d0d; color: var(--gold);
+      font-family: var(--mono); font-size: 10px; padding: 10px 12px;
+      text-align: right; letter-spacing: 0.06em; font-weight: 600;
+    }
+    th:first-child { text-align: left; }
+    td {
+      padding: 8px 12px; text-align: right;
+      font-family: var(--mono); font-size: 12px;
+      border-bottom: 1px solid #181818; color: #bbb;
+    }
+    td:first-child { text-align: left; font-weight: 600; color: var(--muted); font-family: var(--sans); font-size: 12px; }
+    tr:hover td { background: #161616; }
+    tr.hl td { background: #0d1a0e; }
+    tr.hl td:first-child { color: var(--up); }
+    tr.selected td { background: rgba(255,215,0,.10) !important; }
+    tr.selected td:first-child { color: var(--gold) !important; }
+
+    /* ── HIST TABLE ────────────────────────────────────── */
+    .hist-filtros {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+      padding: 1rem; margin-bottom: 1rem;
+      display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: end;
+    }
+    .hist-filtros label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 4px; }
+    .hist-filtros input, .hist-filtros select {
+      width: 100%; background: #1a1a1a; border: 1px solid #333; border-radius: 6px;
+      padding: 7px 10px; font-size: 13px; color: var(--text); font-family: var(--sans);
+    }
+    .hist-filtros input:focus, .hist-filtros select:focus { outline: none; border-color: var(--gold); }
+    .hist-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 0.5rem; }
+    .hist-table th {
+      background: #0d0d0d; color: var(--gold);
+      font-family: var(--mono); padding: 8px 10px; text-align: left; font-size: 10px; letter-spacing: 0.06em;
+    }
+    .hist-table td {
+      padding: 7px 10px; border-bottom: 1px solid #181818;
+      text-align: left; cursor: default; color: #bbb;
+      font-family: var(--mono); font-size: 11px;
+    }
+    .hist-table tr:hover td { background: #161616; }
+
+    /* ── CHART ─────────────────────────────────────────── */
+    .chart-container {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem; margin-bottom: 1rem;
+    }
+    #precio-chart { width: 100%; height: 340px; }
+    .chart-tabs { display: flex; gap: 6px; }
+    .chart-tab {
+      padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border); background: transparent;
+      color: var(--muted); font-family: var(--sans); transition: all .15s;
+    }
+    .chart-tab.active { background: var(--gold); color: #0a0a0a; border-color: var(--gold); }
+    .periodo-btns { display: flex; gap: 4px; }
+    .periodo-btn {
+      padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 700;
+      cursor: pointer; border: 1px solid var(--border); background: transparent;
+      color: var(--muted); font-family: var(--mono); transition: all .15s;
+    }
+    .periodo-btn.active { background: var(--gold); color: #0a0a0a; border-color: var(--gold); }
+    .gi-bar { margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+    .gi-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .gi-precio { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--text); margin-right: 8px; }
+    .gi-change { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+
+    /* ── ALERTAS ───────────────────────────────────────── */
+    .alertas-panel {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem;
+    }
+    .alertas-field-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 4px; }
+    .alertas-dest-input {
+      width: 100%; background: #1a1a1a; border: 1px solid #333; border-radius: 6px;
+      padding: 7px 10px; font-size: 13px; color: var(--text); margin-bottom: 1rem;
+    }
+    .alertas-dest-input:focus { outline: none; border-color: var(--gold); }
+    .alertas-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+    .alertas-grid label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 4px; }
+    .alertas-grid input {
+      width: 100%; background: #1a1a1a; border: 1px solid #333; border-radius: 6px;
+      padding: 7px 10px; font-size: 13px; color: var(--text);
+    }
+    .alertas-grid input:focus { outline: none; border-color: var(--gold); }
+    .alertas-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .alertas-toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; color: var(--text); }
+    .alertas-toggle input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--gold); }
+    .alertas-nota { font-size: 11px; color: #444; margin-top: 8px; }
+
+    /* ── BUTTONS ───────────────────────────────────────── */
+    .btn {
+      padding: 8px 16px; border-radius: 7px; font-size: 12px; cursor: pointer;
+      border: 1px solid var(--border); font-weight: 600; font-family: var(--sans);
+      transition: all .15s;
+    }
+    .btn-gold { background: var(--gold); color: #0a0a0a; border-color: var(--gold); }
+    .btn-gold:hover { opacity: 0.9; }
+    .btn-dark { background: transparent; color: var(--text); border-color: var(--border); }
+    .btn-dark:hover { border-color: #444; background: #1a1a1a; }
+    .btn-sm { padding: 5px 12px; font-size: 11px; }
+
+    /* ── STATUS BAR ────────────────────────────────────── */
+    .sbar { font-size: 10px; color: #333; margin-top: 1.5rem; text-align: right; padding-bottom: 2rem; font-family: var(--mono); }
+    .no-data { text-align: center; color: var(--muted); padding: 20px; font-size: 12px; }
+
+    /* ── RESPONSIVE ────────────────────────────────────── */
+    @media(max-width:900px){
+      .cards-row { grid-template-columns: 1fr 1fr; }
       .vgrid { grid-template-columns: 1fr 1fr; }
       .hist-filtros { grid-template-columns: 1fr 1fr; }
       .alertas-grid { grid-template-columns: 1fr 1fr; }
-      th,td { font-size: 11px; padding: 6px 8px; }
+      .hero-price { font-size: 36px; }
+      .hero-sep { display: none; }
+    }
+    @media(max-width:600px){
+      .tab-btn .tab-label { display: none; }
+      .hdr-clock { display: none; }
+      th,td { font-size: 10px; padding: 6px 7px; }
+      .card-price { font-size: 24px; }
     }
   </style>
 </head>
@@ -152,7 +372,7 @@
 <!-- Login overlay -->
 <div id="login-overlay">
   <div class="login-box">
-    <img src="/icons/logo-mc.png" alt="MC Metales del Caribe" style="height:48px;margin-bottom:8px;">
+    <img src="/icons/logo-mc.png" alt="MC Metales del Caribe" style="height:52px;display:block;margin:0 auto 12px;">
     <p>Ingresa la contraseña para continuar</p>
     <input type="password" id="login-pwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     <button onclick="doLogin()">Ingresar</button>
@@ -160,48 +380,129 @@
   </div>
 </div>
 
+<!-- Header -->
 <header>
-  <div>
-    <img src="/icons/logo-mc.png" alt="MC Metales del Caribe" style="height:40px;display:block;">
-    <p id="fecha"></p>
+  <div class="hdr-left">
+    <img src="/icons/logo-mc.png" alt="MC Metales" style="height:60px;display:block;">
+    <div class="hdr-brand">
+      <div class="hdr-brand-name">MC Metales del Caribe</div>
+      <div class="hdr-brand-sub" id="fecha"></div>
+    </div>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <span class="badge load" id="badge">Cargando...</span>
-    <button class="btn btn-gold" onclick="fetchAll()">Actualizar</button>
-    <button class="btn btn-dark btn-sm" onclick="logout()" title="Cerrar sesión" style="font-size:11px;">Salir</button>
+  <div class="hdr-right">
+    <div class="hdr-clock" id="clock">--:--:--</div>
+    <div class="status-wrap">
+      <div class="status-dot load" id="status-dot"></div>
+      <span id="status-text">Cargando</span>
+    </div>
+    <!-- badge oculto — compatibilidad con setBadge() -->
+    <span id="badge" style="display:none;"></span>
+    <!-- Exportar Excel -->
+    <button class="hdr-btn gold-icon" data-tip="Exportar Excel" onclick="exportExcel()" title="Exportar Excel">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <polyline points="14,2 14,8 20,8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10,9 9,9 8,9"/>
+      </svg>
+    </button>
+    <!-- Copiar precios -->
+    <button class="hdr-btn" data-tip="Copiar precios" onclick="copiar()" title="Copiar precios">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2"/>
+        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+      </svg>
+    </button>
+    <!-- Actualizar (circular, con spin) -->
+    <button class="hdr-btn round" id="btn-refresh" data-tip="Actualizar" onclick="fetchAll()" title="Actualizar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="23,4 23,10 17,10"/>
+        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+      </svg>
+    </button>
+    <!-- Cerrar sesión -->
+    <button class="hdr-btn" data-tip="Cerrar sesión" onclick="logout()" title="Cerrar sesión">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+        <polyline points="16,17 21,12 16,7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+    </button>
   </div>
 </header>
-<main>
-  <div class="grid4">
-    <div class="card">
-      <label>Onza troy Bid — Kitco (USD)</label>
-      <div><span class="big" id="onza-v">—</span><span class="delta" id="onza-d"></span></div>
-      <div class="sub" id="onza-src">Consultando...</div>
-      <input type="number" id="onza-i" placeholder="Ingresar manualmente" step="0.1" oninput="manual('o')">
-    </div>
-    <div class="card">
-      <label>Dólar Compra — Banco de Bogotá (COP)</label>
-      <div><span class="big" id="dolar-v">—</span><span class="delta" id="dolar-d"></span></div>
-      <div class="sub" id="dolar-src">Consultando...</div>
-      <input type="number" id="dolar-i" placeholder="Ingresar manualmente" step="1" oninput="manual('d')">
-    </div>
-    <div class="card">
-      <label>Internacional (COP/g)</label>
-      <div><span class="big" id="intl-v">—</span><span class="delta" id="intl-d"></span></div>
-      <div class="sub">Onza × Dólar ÷ 31.1035</div>
-      <div style="margin-top:8px;">
-        <label style="margin-bottom:2px;">Regalías del mes (COP/g)</label>
-        <input type="number" id="reg-i" value="18965.39" step="0.01" oninput="manual('r')">
+
+<!-- Hero bar — precio internacional destacado -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-block">
+      <div class="hero-label">Internacional COP / g</div>
+      <div class="hero-price" id="hero-intl-v">—</div>
+      <div class="hero-deltas">
+        <span class="hero-delta" id="hero-intl-d"></span>
+        <span class="hero-pct"   id="hero-intl-pct"></span>
       </div>
     </div>
+    <div class="hero-sep"></div>
+    <div class="hero-mini">
+      <div class="hero-mini-label">Onza Bid (USD)</div>
+      <div class="hero-mini-val" id="hero-onza-v">—</div>
+    </div>
+    <div class="hero-mini">
+      <div class="hero-mini-label">Dólar Compra (COP)</div>
+      <div class="hero-mini-val" id="hero-dolar-v">—</div>
+    </div>
+    <div class="hero-mini">
+      <div class="hero-mini-label">Regalías (COP/g)</div>
+      <div class="hero-mini-val" id="hero-reg-v">—</div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <!-- 4 tarjetas de precios -->
+  <div class="cards-row">
+    <!-- Onza -->
+    <div class="card">
+      <div class="card-label">Onza Troy Bid — Kitco (USD)</div>
+      <div class="card-price-row">
+        <span class="card-price" id="onza-v">—</span>
+        <span class="card-delta" id="onza-d"></span>
+      </div>
+      <div class="card-src" id="onza-src">Consultando...</div>
+      <button class="card-pencil" onclick="toggleManual('onza')" title="Ingresar manualmente">✎</button>
+      <input type="number" id="onza-i" class="card-input" placeholder="Manual..." step="0.1" oninput="manual('o')">
+    </div>
+    <!-- Dólar -->
+    <div class="card">
+      <div class="card-label">Dólar Compra — Banco de Bogotá (COP)</div>
+      <div class="card-price-row">
+        <span class="card-price" id="dolar-v">—</span>
+        <span class="card-delta" id="dolar-d"></span>
+      </div>
+      <div class="card-src" id="dolar-src">Consultando...</div>
+      <button class="card-pencil" onclick="toggleManual('dolar')" title="Ingresar manualmente">✎</button>
+      <input type="number" id="dolar-i" class="card-input" placeholder="Manual..." step="1" oninput="manual('d')">
+    </div>
+    <!-- Internacional -->
+    <div class="card">
+      <div class="card-label">Internacional (COP/g)</div>
+      <div class="card-price-row">
+        <span class="card-price" id="intl-v">—</span>
+        <span class="card-delta" id="intl-d"></span>
+      </div>
+      <div class="card-src">Onza × Dólar ÷ 31.1035</div>
+      <button class="card-pencil" onclick="toggleManual('reg')" title="Editar regalías">✎</button>
+      <input type="number" id="reg-i" class="card-input" value="18965.39" step="0.01" oninput="manual('r')" placeholder="Regalías COP/g">
+    </div>
+    <!-- Variación vs ayer -->
     <div class="comp-card">
-      <label>Variación vs ayer 9:00 am</label>
+      <div class="card-label">Variación vs ayer 9:00 am</div>
       <div class="comp-row">
-        <div><div class="comp-label">Onza</div><div class="comp-val" id="comp-onza-val">—</div></div>
+        <div><div class="comp-label">Onza (USD)</div><div class="comp-val" id="comp-onza-val">—</div></div>
         <span class="comp-delta" id="comp-onza-delta">—</span>
       </div>
       <div class="comp-row">
-        <div><div class="comp-label">Dólar</div><div class="comp-val" id="comp-dolar-val">—</div></div>
+        <div><div class="comp-label">Dólar (COP)</div><div class="comp-val" id="comp-dolar-val">—</div></div>
         <span class="comp-delta" id="comp-dolar-delta">—</span>
       </div>
       <div class="comp-row">
@@ -211,17 +512,31 @@
     </div>
   </div>
 
+  <!-- Precios por categoría -->
   <div class="sec-row">
-    <div class="sec">Precios de compra por categoría</div>
+    <div class="sec-title">Precios de compra por categoría</div>
     <div class="ley-activa" id="ley-activa">Ley 94.5%</div>
   </div>
   <div class="vgrid" id="vgrid"></div>
 
-  <div class="sec-row">
-    <div class="sec">Tabla completa — toca una ley para ver sus precios arriba</div>
-    <button class="btn btn-dark btn-sm" id="btn-tabla" onclick="verTabla()">Ver tabla</button>
-  </div>
-  <div id="tabla-container" style="display:none;overflow-x:auto;">
+  <!-- Tabs de navegación -->
+  <nav class="tabs-bar">
+    <button class="tab-btn" id="btn-tabla" onclick="verTabla()">
+      <span class="tab-icon">📋</span><span class="tab-label">Tabla</span>
+    </button>
+    <button class="tab-btn" id="btn-grafica" onclick="verGrafica()">
+      <span class="tab-icon">🕯️</span><span class="tab-label">Gráfica</span>
+    </button>
+    <button class="tab-btn" id="btn-historial" onclick="verHistorial()">
+      <span class="tab-icon">🕒</span><span class="tab-label">Historial</span>
+    </button>
+    <button class="tab-btn" id="btn-alertas" onclick="verAlertas()">
+      <span class="tab-icon">🔔</span><span class="tab-label">Alertas</span>
+    </button>
+  </nav>
+
+  <!-- Tabla completa -->
+  <div id="tabla-container" style="display:none;overflow-x:auto;margin-bottom:1.25rem;">
     <table>
       <thead>
         <tr>
@@ -231,16 +546,16 @@
       </thead>
       <tbody id="tbody"></tbody>
     </table>
+    <div style="font-size:10px;color:#333;margin-top:6px;text-align:right;font-family:'IBM Plex Mono',monospace;">
+      Toca una fila para ver los precios de esa ley arriba
+    </div>
   </div>
 
-  <div class="sec-row" style="margin-top:2rem;">
-    <div class="sec">Gráfica de precios</div>
-    <button class="btn btn-dark btn-sm" id="btn-grafica" onclick="verGrafica()">Ver gráfica</button>
-  </div>
+  <!-- Gráfica -->
   <div id="grafica-container" style="display:none;">
     <div class="chart-container">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:1rem;">
-        <div class="chart-tabs" style="margin-bottom:0;">
+        <div class="chart-tabs">
           <button class="chart-tab active" onclick="setGraficaTab('onza',this)">Onza</button>
           <button class="chart-tab" onclick="setGraficaTab('dolar',this)">Dólar</button>
           <button class="chart-tab" onclick="setGraficaTab('intl',this)">Internacional</button>
@@ -263,15 +578,12 @@
       </div>
       <div style="position:relative;">
         <div id="precio-chart"></div>
-        <div id="ohlc-tooltip" style="display:none;position:absolute;top:8px;left:8px;z-index:10;background:rgba(20,20,20,0.92);border:1px solid #333;border-radius:6px;padding:6px 10px;pointer-events:none;line-height:1.6;"></div>
+        <div id="ohlc-tooltip" style="display:none;position:absolute;top:8px;left:8px;z-index:10;background:rgba(10,10,10,.95);border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;pointer-events:none;line-height:1.6;font-family:'IBM Plex Mono',monospace;font-size:11px;"></div>
       </div>
     </div>
   </div>
 
-  <div class="sec-row" style="margin-top:2rem;">
-    <div class="sec">Historial de precios — último año</div>
-    <button class="btn btn-dark btn-sm" id="btn-historial" onclick="verHistorial()">Ver historial</button>
-  </div>
+  <!-- Historial -->
   <div id="historial-container" style="display:none;">
     <div class="hist-filtros">
       <div>
@@ -297,9 +609,8 @@
           <option value="17">5:00 pm</option>
         </select>
       </div>
-      <button class="btn btn-dark" onclick="aplicarFiltros()">Filtrar</button>
+      <button class="btn btn-gold" onclick="aplicarFiltros()">Filtrar</button>
     </div>
-
     <div style="overflow-x:auto;">
       <table class="hist-table">
         <thead>
@@ -313,20 +624,16 @@
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
       <button id="hist-ver-mas" class="btn btn-dark btn-sm" onclick="verMasHistorial()" style="display:none;">Ver más</button>
-      <div id="hist-count" style="font-size:11px;color:#aaa;text-align:right;flex:1;"></div>
+      <div id="hist-count" style="font-size:10px;color:var(--muted);text-align:right;flex:1;font-family:'IBM Plex Mono',monospace;"></div>
     </div>
   </div>
 
-  <!-- Alertas Email -->
-  <div class="sec-row" style="margin-top:2rem;">
-    <div class="sec">Alertas por Email — Azure Communication Services</div>
-    <button class="btn btn-dark btn-sm" id="btn-alertas" onclick="verAlertas()">Configurar</button>
-  </div>
+  <!-- Alertas -->
   <div id="alertas-container" style="display:none;">
     <div class="alertas-panel">
       <div style="margin-bottom:1rem;">
-        <label style="font-size:10px;color:#888;text-transform:uppercase;display:block;margin-bottom:4px;">Destinatarios (separados por coma)</label>
-        <input type="text" id="a-dest" placeholder="gerencia@mcmetales.com, compras@mcmetales.com" style="width:100%;border:1px solid #ddd;border-radius:6px;padding:7px 10px;font-size:13px;">
+        <label class="alertas-field-label">Destinatarios (separados por coma)</label>
+        <input type="text" id="a-dest" class="alertas-dest-input" placeholder="gerencia@mcmetales.com, compras@mcmetales.com">
       </div>
       <div class="alertas-grid">
         <div>
@@ -348,7 +655,7 @@
           <span>Alertas activas</span>
         </label>
         <button class="btn btn-gold btn-sm" onclick="guardarAlertas()">Guardar configuración</button>
-        <span id="a-estado" style="font-size:12px;color:#aaa;"></span>
+        <span id="a-estado" style="font-size:12px;color:var(--muted);"></span>
       </div>
       <div class="alertas-nota">
         Mínimo 30 minutos entre alertas para evitar spam. El remitente es la dirección de Azure Communication Services configurada en el servidor.
@@ -357,11 +664,6 @@
     </div>
   </div>
 
-  <div class="actions">
-    <button class="btn btn-dark" onclick="exportExcel()">Exportar Excel</button>
-    <button class="btn btn-gold" onclick="fetchAll()">Refrescar precios</button>
-    <button class="btn btn-dark" onclick="copiar()">Copiar precios</button>
-  </div>
   <div class="sbar" id="sbar">Iniciando...</div>
 </main>
 
@@ -398,7 +700,7 @@ let graficaVisible=false, graficaTab='onza', graficaPeriodo='1H';
 const fmt=n=>Math.round(n).toLocaleString('es-CO');
 const fmtU=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
-// ── Auth ────────────────────────────────────────────────────────────────────
+// ── Auth ─────────────────────────────────────────────────────────────────────
 function getToken(){ return sessionStorage.getItem('mcm_token') || ''; }
 function authHeaders(){ return { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' }; }
 
@@ -432,15 +734,52 @@ function handleUnauthorized(){
   document.getElementById('login-overlay').style.display = 'flex';
 }
 
-// ── UI helpers ───────────────────────────────────────────────────────────────
-function setBadge(t,c){const b=document.getElementById('badge');b.textContent=t;b.className='badge '+c;}
-function setSbar(t){document.getElementById('sbar').textContent=t;}
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function setBadge(t,c){
+  // Badge oculto — compatibilidad
+  const b=document.getElementById('badge'); b.textContent=t; b.className='badge '+c;
+  // Status dot visible
+  const dot=document.getElementById('status-dot');
+  const txt=document.getElementById('status-text');
+  dot.className='status-dot '+c;
+  txt.textContent=t;
+}
+
+function setSbar(t){ document.getElementById('sbar').textContent=t; }
+
 function setDelta(id,nv,ov,usd){
   const el=document.getElementById(id);
-  if(ov===null||nv===ov){el.textContent='';return;}
+  if(ov===null||nv===ov){el.textContent='';el.className='card-delta';return;}
   const d=nv-ov;
-  el.className='delta '+(d>0?'up':'dn');
-  el.textContent=(d>0?'+':'')+(usd?fmtU(d):fmt(d));
+  el.className='card-delta '+(d>0?'delta-up':'delta-dn');
+  el.textContent=(d>0?'▲ +':'▼ ')+(usd?fmtU(Math.abs(d)):fmt(Math.abs(d)));
+}
+
+function toggleManual(field){
+  const ids={onza:'onza-i',dolar:'dolar-i',reg:'reg-i'};
+  const el=document.getElementById(ids[field]);
+  el.classList.toggle('visible');
+  if(el.classList.contains('visible')) el.focus();
+}
+
+function updateHero(){
+  if(!cur.o||!cur.d) return;
+  const intl=(cur.o*cur.d)/TROY;
+  document.getElementById('hero-intl-v').textContent='$ '+fmt(intl);
+  document.getElementById('hero-onza-v').textContent='$ '+fmtU(cur.o);
+  document.getElementById('hero-dolar-v').textContent='$ '+fmt(cur.d);
+  document.getElementById('hero-reg-v').textContent='$ '+fmt(cur.r);
+  if(prev.o&&prev.d){
+    const prevIntl=(prev.o*prev.d)/TROY;
+    const diff=intl-prevIntl, pct=diff/prevIntl*100, up=diff>=0;
+    const col=up?'var(--up)':'var(--dn)';
+    const dEl=document.getElementById('hero-intl-d');
+    const pEl=document.getElementById('hero-intl-pct');
+    dEl.textContent=(up?'▲ +':'▼ ')+fmt(Math.abs(Math.round(diff)));
+    dEl.style.color=col;
+    pEl.textContent=(up?'+':'')+pct.toFixed(2)+'%';
+    pEl.style.color=col;
+  }
 }
 
 function mostrarComparativa(precioAyer){
@@ -464,12 +803,12 @@ function mostrarComparativa(precioAyer){
   elI.textContent=(diffI>0?'▲ +':'▼ ')+fmt(Math.abs(diffI));
 }
 
+// ── Tabs ──────────────────────────────────────────────────────────────────────
 function verTabla(){
   tablaVisible=!tablaVisible;
   document.getElementById('tabla-container').style.display=tablaVisible?'block':'none';
-  document.getElementById('btn-tabla').textContent=tablaVisible?'Ocultar tabla':'Ver tabla';
+  document.getElementById('btn-tabla').classList.toggle('active',tablaVisible);
 }
-
 
 function getFiltrados(){
   const desde=document.getElementById('f-desde').value;
@@ -489,7 +828,7 @@ function aplicarFiltros(){
   renderTablaHist(getFiltrados());
 }
 
-// ── Gráfica de precios — TradingView Lightweight Charts ──────────────────────
+// ── Gráfica — TradingView Lightweight Charts ──────────────────────────────────
 const GRAFICA_LABELS={onza:'Onza Troy (USD)',dolar:'Dólar Compra (COP)',intl:'Internacional (COP/g)'};
 const GRAFICA_CFG={
   '1H':{ms:      60*60*1000, intervalMs:     60*1000, src:'rt'  },
@@ -557,7 +896,7 @@ function actualizarInfoGrafica(candles){
   const diff=last.close-first.open,pct=diff/first.open*100,up=diff>=0;
   const col=up?'#26a69a':'#ef5350';
   const varEl=document.getElementById('gi-var'),pctEl=document.getElementById('gi-pct');
-  varEl.textContent=(up?'+':'')+f(diff); varEl.style.color=col;
+  varEl.textContent=(up?'▲ +':'▼ ')+f(Math.abs(diff)); varEl.style.color=col;
   pctEl.textContent=(up?'+':'')+pct.toFixed(2)+'%'; pctEl.style.color=col;
 }
 
@@ -572,22 +911,18 @@ let graficaChartInst=null,graficaCandleSeries=null,graficaVolumeSeries=null,graf
 function crearGraficaTradingView(){
   const el=document.getElementById('precio-chart');
   const w=el.clientWidth||el.offsetWidth||el.parentElement.clientWidth||600;
-  const h=el.clientHeight||el.offsetHeight||340;
-  console.log('[MCM] crearGraficaTradingView — dim:', w, 'x', h,
-    '| LightweightCharts:', typeof LightweightCharts,
-    '| version:', LightweightCharts.version ? LightweightCharts.version() : 'n/a');
   if(graficaChartInst){graficaChartInst.remove();graficaChartInst=null;}
   graficaChartInst=LightweightCharts.createChart(el,{
     width:w,height:340,
-    layout:{background:{color:'#1a1a1a'},textColor:'#888'},
-    grid:{vertLines:{color:'#1e1e1e'},horzLines:{color:'#222'}},
+    layout:{background:{color:'#111111'},textColor:'#888'},
+    grid:{vertLines:{color:'#181818'},horzLines:{color:'#1e1e1e'}},
     crosshair:{
       mode:LightweightCharts.CrosshairMode.Normal,
-      vertLine:{color:'#555',labelBackgroundColor:'#2a2a2a'},
-      horzLine:{color:'#555',labelBackgroundColor:'#2a2a2a'},
+      vertLine:{color:'#444',labelBackgroundColor:'#222'},
+      horzLine:{color:'#444',labelBackgroundColor:'#222'},
     },
-    rightPriceScale:{borderColor:'#2a2a2a'},
-    timeScale:{borderColor:'#2a2a2a',timeVisible:true,secondsVisible:false,
+    rightPriceScale:{borderColor:'#222'},
+    timeScale:{borderColor:'#222',timeVisible:true,secondsVisible:false,
       fixLeftEdge:false,fixRightEdge:false,
       barSpacing:6,minBarSpacing:2,rightOffset:3},
     handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
@@ -605,38 +940,24 @@ function crearGraficaTradingView(){
   graficaChartInst.priceScale('vol').applyOptions({
     scaleMargins:{top:0.82,bottom:0},drawTicks:false,borderVisible:false,
   });
-  // Datos de prueba para verificar que el chart renderiza
-  const now=Math.floor(Date.now()/1000);
-  const testCandles=[
-    {time:now-300,open:3100,high:3110,low:3095,close:3105},
-    {time:now-240,open:3105,high:3115,low:3100,close:3108},
-    {time:now-180,open:3108,high:3120,low:3104,close:3118},
-    {time:now-120,open:3118,high:3122,low:3112,close:3114},
-    {time:now-60, open:3114,high:3125,low:3110,close:3122},
-  ];
-  graficaCandleSeries.setData(testCandles);
-  graficaVolumeSeries.setData(testCandles.map(c=>({time:c.time,value:10,color:'#26a69a55'})));
-  console.log('[MCM] datos de prueba cargados — si ves la gráfica, el chart funciona y el problema es en los datos reales');
-  // Crosshair → tooltip OHLC en esquina superior izquierda
   graficaChartInst.subscribeCrosshairMove(param=>{
-    const el=document.getElementById('ohlc-tooltip');
-    if(!param.time||!param.point||param.point.x<0||param.point.y<0){el.style.display='none';return;}
+    const tt=document.getElementById('ohlc-tooltip');
+    if(!param.time||!param.point||param.point.x<0||param.point.y<0){tt.style.display='none';return;}
     const c=param.seriesData.get(graficaCandleSeries);
-    if(!c){el.style.display='none';return;}
+    if(!c){tt.style.display='none';return;}
     const isUSD=graficaTab==='onza';
     const f=isUSD?v=>fmtU(v):v=>fmt(v);
     const col=c.close>=c.open?'#26a69a':'#ef5350';
     const ts=new Date(param.time*1000).toLocaleString('es-CO',
       {timeZone:'America/Bogota',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    el.style.display='block';
-    el.innerHTML='<span style="color:#555;font-size:9px;">'+ts+'</span><br>'
-      +'<span style="color:'+col+';font-size:11px;">'
+    tt.style.display='block';
+    tt.innerHTML='<span style="color:#555;font-size:9px;">'+ts+'</span><br>'
+      +'<span style="color:'+col+';">'
       +'A&nbsp;<b>'+f(c.open)+'</b>&emsp;'
       +'H&nbsp;<b>'+f(c.high)+'</b>&emsp;'
       +'L&nbsp;<b>'+f(c.low)+'</b>&emsp;'
       +'C&nbsp;<b>'+f(c.close)+'</b></span>';
   });
-  // Responsive: ajusta ancho al cambiar tamaño del contenedor
   if(window._grafResizeObs) window._grafResizeObs.disconnect();
   window._grafResizeObs=new ResizeObserver(()=>{
     if(graficaChartInst){
@@ -654,12 +975,8 @@ function dibujarGraficaUnificada(){
     priceFormat:{type:'price',precision:isUSD?2:0,minMove:isUSD?0.01:1},
   });
   const {candles,volumes}=getGraficaData();
-  console.log('[MCM] dibujarGraficaUnificada — tab:', graficaTab, '| periodo:', graficaPeriodo,
-    '| rtBuffer.length:', rtBuffer.length, '| todosRegistros.length:', todosRegistros.length,
-    '| candles:', candles.length);
   graficaCandleSeries.setData(candles);
   graficaVolumeSeries.setData(volumes);
-  // Línea de precio actual (se actualiza cada minuto vía fetchAll)
   if(graficaPriceLine){try{graficaCandleSeries.removePriceLine(graficaPriceLine);}catch(e){} graficaPriceLine=null;}
   const cv=getCurVal();
   if(cv){
@@ -669,7 +986,6 @@ function dibujarGraficaUnificada(){
       axisLabelVisible:true,title:'',
     });
   }
-  // Anclar última vela al borde derecho con barSpacing fijo (no fitContent que estira las velas)
   graficaChartInst.timeScale().applyOptions({barSpacing:6,rightOffset:3});
   graficaChartInst.timeScale().scrollToRealTime();
   actualizarInfoGrafica(candles);
@@ -677,11 +993,8 @@ function dibujarGraficaUnificada(){
 
 function verGrafica(){
   graficaVisible=!graficaVisible;
-  const c=document.getElementById('grafica-container');
-  const b=document.getElementById('btn-grafica');
-  c.style.display=graficaVisible?'block':'none';
-  b.textContent=graficaVisible?'Ocultar gráfica':'Ver gráfica';
-  // setTimeout permite que el DOM renderice el contenedor antes de medir clientWidth
+  document.getElementById('grafica-container').style.display=graficaVisible?'block':'none';
+  document.getElementById('btn-grafica').classList.toggle('active',graficaVisible);
   if(graficaVisible) setTimeout(dibujarGraficaUnificada,150);
 }
 
@@ -723,7 +1036,7 @@ function renderTablaHist(registros){
   } else {
     btnVerMas.style.display='none';
   }
-  document.getElementById('hist-count').textContent=`Mostrando ${visibles.length} de ${registros.length} registros`;
+  document.getElementById('hist-count').textContent=`${visibles.length} / ${registros.length} registros`;
 }
 
 function verMasHistorial(){
@@ -735,16 +1048,14 @@ async function verHistorial(){
   historialVisible=!historialVisible;
   const container=document.getElementById('historial-container');
   const btn=document.getElementById('btn-historial');
-  if(!historialVisible){ container.style.display='none'; btn.textContent='Ver historial'; return; }
+  if(!historialVisible){ container.style.display='none'; btn.classList.remove('active'); return; }
   container.style.display='block';
-  btn.textContent='Ocultar historial';
+  btn.classList.add('active');
   histLimite=10;
-
   const hoy=new Date();
   const hace30=new Date(); hace30.setDate(hoy.getDate()-30);
   document.getElementById('f-hasta').value=hoy.toISOString().slice(0,10);
   document.getElementById('f-desde').value=hace30.toISOString().slice(0,10);
-
   const tbody=document.getElementById('hist-tbody');
   tbody.innerHTML=`<tr><td colspan="5" class="no-data">Cargando...</td></tr>`;
   try {
@@ -769,6 +1080,7 @@ async function guardarPrecios(){
 
 async function fetchAll(){
   setBadge('Cargando...','load');
+  document.getElementById('btn-refresh').classList.add('spinning');
   const po=cur.o, pd=cur.d;
   const [rO,rD,rH]=await Promise.allSettled([
     fetch(API_ONZA).then(r=>r.json()),
@@ -804,11 +1116,13 @@ async function fetchAll(){
     todosRegistros=rH.value.registros||[];
     if(rH.value.precioAyer&&cur.o&&cur.d) mostrarComparativa(rH.value.precioAyer);
   }
+  prev={o:po,d:pd};
   if(okO&&okD){ setBadge('En vivo','live'); guardarPrecios(); }
   else if(okO||okD) setBadge('Parcial','man');
   else setBadge('Sin conexión','err');
-  if(cur.o&&cur.d){ render(); rtPush(cur.o,cur.d); }
+  if(cur.o&&cur.d){ render(); rtPush(cur.o,cur.d); updateHero(); }
   if(graficaVisible) dibujarGraficaUnificada();
+  document.getElementById('btn-refresh').classList.remove('spinning');
   setSbar(`Actualizado: ${new Date().toLocaleString('es-CO')} · Refresco automático cada 1 min`);
 }
 
@@ -861,6 +1175,7 @@ function manual(w){
     const intl=(cur.o*cur.d)/TROY;
     document.getElementById('intl-v').textContent='$ '+fmt(intl);
     render();
+    updateHero();
   }
   setBadge('Manual','man');
 }
@@ -900,14 +1215,14 @@ function copiar(){
   navigator.clipboard.writeText(txt).then(()=>setSbar('Precios copiados al portapapeles.'));
 }
 
-// ── Alertas ──────────────────────────────────────────────────────────────────
+// ── Alertas ───────────────────────────────────────────────────────────────────
 function verAlertas(){
   alertasVisible=!alertasVisible;
   const container=document.getElementById('alertas-container');
   const btn=document.getElementById('btn-alertas');
-  if(!alertasVisible){ container.style.display='none'; btn.textContent='Configurar'; return; }
+  if(!alertasVisible){ container.style.display='none'; btn.classList.remove('active'); return; }
   container.style.display='block';
-  btn.textContent='Ocultar';
+  btn.classList.add('active');
   cargarAlertas();
 }
 
@@ -948,13 +1263,24 @@ async function guardarAlertas(){
   }
 }
 
-// ── Init ─────────────────────────────────────────────────────────────────────
+// ── Reloj en tiempo real ──────────────────────────────────────────────────────
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+
+    String(n.getMinutes()).padStart(2,'0')+':'+
+    String(n.getSeconds()).padStart(2,'0');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
 function initApp(){
   document.getElementById('fecha').textContent=
     new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  updateClock();
+  setInterval(updateClock, 1000);
   fetchAll();
-  setInterval(fetchAll,60*1000);
-  setInterval(guardarPrecios,30*60*1000);
+  setInterval(fetchAll, 60*1000);
+  setInterval(guardarPrecios, 30*60*1000);
 }
 
 // Al cargar: verificar sesión existente
