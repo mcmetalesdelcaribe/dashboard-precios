@@ -588,7 +588,8 @@ function crearGraficaTradingView(){
     },
     rightPriceScale:{borderColor:'#2a2a2a'},
     timeScale:{borderColor:'#2a2a2a',timeVisible:true,secondsVisible:false,
-      fixLeftEdge:false,fixRightEdge:false},
+      fixLeftEdge:false,fixRightEdge:false,
+      barSpacing:6,rightOffset:5},
     handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
     handleScale:{mouseWheel:true,pinch:true,axisPressedMouseMove:true},
   });
@@ -669,6 +670,7 @@ function dibujarGraficaUnificada(){
     });
   }
   graficaChartInst.timeScale().fitContent();
+  graficaChartInst.timeScale().applyOptions({rightOffset:5});
   actualizarInfoGrafica(candles);
 }
 
