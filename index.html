@@ -81,6 +81,7 @@
     .hist-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; text-align: left; cursor: default; }
     .hist-table tr:hover td { background: #fafafa; }
     .chart-container { background: #1a1a1a; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1rem; }
+    #precio-chart { width: 100%; height: 340px; }
     .chart-tabs { display: flex; gap: 8px; margin-bottom: 1rem; }
     .chart-tab { padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: bold; cursor: pointer; border: none; background: #333; color: #666; }
     .chart-tab.active { background: #FFD700; color: #1a1a1a; }
@@ -571,8 +572,9 @@ let graficaChartInst=null,graficaCandleSeries=null,graficaVolumeSeries=null,graf
 function crearGraficaTradingView(){
   const el=document.getElementById('precio-chart');
   if(graficaChartInst){graficaChartInst.remove();graficaChartInst=null;}
+  const w=el.clientWidth||el.offsetWidth||600;
   graficaChartInst=LightweightCharts.createChart(el,{
-    width:el.clientWidth,height:340,
+    width:w,height:340,
     layout:{background:{color:'#1a1a1a'},textColor:'#888'},
     grid:{vertLines:{color:'#1e1e1e'},horzLines:{color:'#222'}},
     crosshair:{
@@ -620,7 +622,10 @@ function crearGraficaTradingView(){
   // Responsive: ajusta ancho al cambiar tamaño del contenedor
   if(window._grafResizeObs) window._grafResizeObs.disconnect();
   window._grafResizeObs=new ResizeObserver(()=>{
-    if(graficaChartInst) graficaChartInst.applyOptions({width:el.clientWidth});
+    if(graficaChartInst){
+      const w=el.clientWidth||el.offsetWidth;
+      if(w>0) graficaChartInst.applyOptions({width:w});
+    }
   });
   window._grafResizeObs.observe(el.parentElement);
 }

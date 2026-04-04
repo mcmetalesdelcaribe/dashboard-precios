@@ -1,13 +1,11 @@
-const CACHE = 'mc-metales-v1';
+const CACHE = 'mc-metales-v3';
 
 const STATIC = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
+  'https://cdn.jsdelivr.net/npm/lightweight-charts/dist/lightweight-charts.standalone.production.js'
 ];
 
 // Instalar: cachear archivos estáticos
@@ -18,7 +16,7 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Activar: eliminar cachés antiguas
+// Activar: eliminar cachés antiguas, tomar control inmediato
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -32,6 +30,21 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // HTML: Network First para asegurar siempre la versión más reciente
+  if (request.mode === 'navigate' || (request.destination === 'document')) {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response.ok) {
+            caches.open(CACHE).then(cache => cache.put(request, response.clone()));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request).then(cached => cached || caches.match('/index.html')))
+    );
+    return;
+  }
 
   // Llamadas a la API: network-first, cachear para offline
   if (url.hostname === 'mc-metales-precios.azurewebsites.net') {
@@ -64,7 +77,6 @@ self.addEventListener('fetch', event => {
         }
         return response;
       }).catch(() => {
-        // Fallback offline para navegación
         if (request.mode === 'navigate') {
           return caches.match('/index.html');
         }
