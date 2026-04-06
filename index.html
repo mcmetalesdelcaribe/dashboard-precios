@@ -877,22 +877,43 @@ async function getGraficaData(){
   if(cfg.src==='rt'){
     try {
       const res=await fetch(API_HIST_MIN,{headers:authHeaders()});
+      if(!res.ok) throw new Error('HTTP '+res.status);
       const data=await res.json();
-      raw=(data.registros||[])
+      const apiRecords=(data.registros||[])
         .filter(p=>new Date(p.timestamp).getTime()>=cutoff)
         .map(p=>({
           ts:new Date(p.timestamp).getTime(),
           v:graficaTab==='onza'?p.onza:graficaTab==='dolar'?p.dolar:Math.round((p.onza*p.dolar)/TROY)
         }));
-    } catch(e){ raw=[]; }
+      console.log('[graf] historialminutos devolvió',data.registros?.length,'registros,',apiRecords.length,'en rango');
+      // Si API vacía, usar rtBuffer como fallback
+      if(apiRecords.length>0){
+        raw=apiRecords;
+      } else {
+        console.log('[graf] API vacía, usando rtBuffer (',rtBuffer.length,'pts)');
+        raw=rtBuffer.filter(p=>p.ts>=cutoff).map(p=>({
+          ts:p.ts,
+          v:graficaTab==='onza'?p.o:graficaTab==='dolar'?p.d:Math.round((p.o*p.d)/TROY)
+        }));
+      }
+    } catch(e){
+      console.warn('[graf] Error al consultar historialminutos:',e.message,', usando rtBuffer');
+      raw=rtBuffer.filter(p=>p.ts>=cutoff).map(p=>({
+        ts:p.ts,
+        v:graficaTab==='onza'?p.o:graficaTab==='dolar'?p.d:Math.round((p.o*p.d)/TROY)
+      }));
+    }
   } else {
     raw=todosRegistros
       .map(r=>({ts:new Date(r.timestamp).getTime(),
         v:graficaTab==='onza'?r.onza:graficaTab==='dolar'?r.dolar:Math.round((r.onza*r.dolar)/TROY)}))
       .filter(p=>p.ts>=cutoff)
       .sort((a,b)=>a.ts-b.ts);
+    console.log('[graf] hist todosRegistros:',todosRegistros.length,'total,',raw.length,'en rango',graficaPeriodo);
   }
-  return buildCandlesAndVolume(raw,cfg.intervalMs);
+  const result=buildCandlesAndVolume(raw,cfg.intervalMs);
+  console.log('[graf] candles generados:',result.candles.length,'para',graficaPeriodo,graficaTab);
+  return result;
 }
 
 function actualizarInfoGrafica(candles){
@@ -1004,32 +1025,41 @@ function crearGraficaTradingView(mode){
 }
 
 async function dibujarGraficaUnificada(){
-  const mode=['1H','2H'].includes(graficaPeriodo)?'candle':'area';
-  if(!graficaChartInst||graficaMode!==mode) crearGraficaTradingView(mode);
-  const isUSD=graficaTab==='onza';
-  const activeSeries=mode==='candle'?graficaCandleSeries:graficaAreaSeries;
-  activeSeries.applyOptions({
-    priceFormat:{type:'price',precision:isUSD?2:0,minMove:isUSD?0.01:1},
-  });
-  const {candles,volumes}=await getGraficaData();
-  if(mode==='candle'){
-    graficaCandleSeries.setData(candles);
-  } else {
-    graficaAreaSeries.setData(candles.map(c=>({time:c.time,value:c.close})));
-  }
-  graficaVolumeSeries.setData(volumes);
-  if(graficaPriceLine){try{activeSeries.removePriceLine(graficaPriceLine);}catch(e){} graficaPriceLine=null;}
-  const cv=getCurVal();
-  if(cv){
-    graficaPriceLine=activeSeries.createPriceLine({
-      price:cv,color:'#FFD700',lineWidth:1,
-      lineStyle:LightweightCharts.LineStyle.Dashed,
-      axisLabelVisible:true,title:'',
+  try {
+    const mode=['1H','2H'].includes(graficaPeriodo)?'candle':'area';
+    console.log('[graf] dibujar periodo='+graficaPeriodo+' tab='+graficaTab+' mode='+mode);
+    if(!graficaChartInst||graficaMode!==mode) crearGraficaTradingView(mode);
+    const isUSD=graficaTab==='onza';
+    const activeSeries=mode==='candle'?graficaCandleSeries:graficaAreaSeries;
+    if(!activeSeries){console.error('[graf] activeSeries es null!');return;}
+    activeSeries.applyOptions({
+      priceFormat:{type:'price',precision:isUSD?2:0,minMove:isUSD?0.01:1},
     });
+    const {candles,volumes}=await getGraficaData();
+    // Guard: si el chart fue recreado mientras esperábamos, abortar
+    if(!graficaChartInst){console.warn('[graf] chart destruido durante fetch, abortando');return;}
+    if(mode==='candle'){
+      graficaCandleSeries.setData(candles);
+    } else {
+      graficaAreaSeries.setData(candles.map(c=>({time:c.time,value:c.close})));
+    }
+    graficaVolumeSeries.setData(volumes);
+    if(graficaPriceLine){try{activeSeries.removePriceLine(graficaPriceLine);}catch(e){} graficaPriceLine=null;}
+    const cv=getCurVal();
+    if(cv){
+      graficaPriceLine=activeSeries.createPriceLine({
+        price:cv,color:'#FFD700',lineWidth:1,
+        lineStyle:LightweightCharts.LineStyle.Dashed,
+        axisLabelVisible:true,title:'',
+      });
+    }
+    graficaChartInst.timeScale().applyOptions({barSpacing:6,rightOffset:3});
+    graficaChartInst.timeScale().scrollToRealTime();
+    actualizarInfoGrafica(candles);
+    console.log('[graf] OK — '+candles.length+' candles renderizados');
+  } catch(e){
+    console.error('[graf] ERROR en dibujarGraficaUnificada:', e);
   }
-  graficaChartInst.timeScale().applyOptions({barSpacing:6,rightOffset:3});
-  graficaChartInst.timeScale().scrollToRealTime();
-  actualizarInfoGrafica(candles);
 }
 
 function verGrafica(){
@@ -1162,7 +1192,10 @@ async function fetchAll(){
   }
   if(rH.status==='fulfilled'){
     todosRegistros=rH.value.registros||[];
+    console.log('[fetchAll] todosRegistros cargados:',todosRegistros.length);
     if(rH.value.precioAyer&&cur.o&&cur.d) mostrarComparativa(rH.value.precioAyer);
+  } else {
+    console.warn('[fetchAll] historial falló:',rH.reason);
   }
   prev={o:po,d:pd};
   if(okO&&okD){ setBadge('En vivo','live'); guardarPrecios(); guardarMinuto(); }
