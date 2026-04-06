@@ -912,12 +912,14 @@ function getCurVal(){
   return (cur.o&&cur.d)?Math.round((cur.o*cur.d)/TROY):null;
 }
 
-let graficaChartInst=null,graficaCandleSeries=null,graficaVolumeSeries=null,graficaPriceLine=null;
+let graficaChartInst=null,graficaCandleSeries=null,graficaAreaSeries=null,graficaVolumeSeries=null,graficaPriceLine=null,graficaMode=null;
 
-function crearGraficaTradingView(){
+function crearGraficaTradingView(mode){
   const el=document.getElementById('precio-chart');
   const w=el.clientWidth||el.offsetWidth||el.parentElement.clientWidth||600;
   if(graficaChartInst){graficaChartInst.remove();graficaChartInst=null;}
+  graficaCandleSeries=null;graficaAreaSeries=null;graficaVolumeSeries=null;graficaPriceLine=null;
+  graficaMode=mode;
   graficaChartInst=LightweightCharts.createChart(el,{
     width:w,height:340,
     layout:{background:{color:'#111111'},textColor:'#888'},
@@ -934,11 +936,22 @@ function crearGraficaTradingView(){
     handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
     handleScale:{mouseWheel:true,pinch:true,axisPressedMouseMove:true},
   });
-  graficaCandleSeries=graficaChartInst.addCandlestickSeries({
-    upColor:'#26a69a',downColor:'#ef5350',
-    borderUpColor:'#26a69a',borderDownColor:'#ef5350',
-    wickUpColor:'#26a69a',wickDownColor:'#ef5350',
-  });
+  if(mode==='candle'){
+    graficaCandleSeries=graficaChartInst.addCandlestickSeries({
+      upColor:'#26a69a',downColor:'#ef5350',
+      borderUpColor:'#26a69a',borderDownColor:'#ef5350',
+      wickUpColor:'#26a69a',wickDownColor:'#ef5350',
+    });
+  } else {
+    graficaAreaSeries=graficaChartInst.addAreaSeries({
+      lineColor:'#FFD700',
+      topColor:'rgba(255,215,0,0.22)',
+      bottomColor:'rgba(255,215,0,0.0)',
+      lineWidth:2,
+      priceLineVisible:false,
+      lastValueVisible:true,
+    });
+  }
   graficaVolumeSeries=graficaChartInst.addHistogramSeries({
     priceFormat:{type:'volume'},priceScaleId:'vol',
     lastValueVisible:false,priceLineVisible:false,
@@ -949,20 +962,28 @@ function crearGraficaTradingView(){
   graficaChartInst.subscribeCrosshairMove(param=>{
     const tt=document.getElementById('ohlc-tooltip');
     if(!param.time||!param.point||param.point.x<0||param.point.y<0){tt.style.display='none';return;}
-    const c=param.seriesData.get(graficaCandleSeries);
-    if(!c){tt.style.display='none';return;}
     const isUSD=graficaTab==='onza';
     const f=isUSD?v=>fmtU(v):v=>fmt(v);
-    const col=c.close>=c.open?'#26a69a':'#ef5350';
     const ts=new Date(param.time*1000).toLocaleString('es-CO',
       {timeZone:'America/Bogota',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    tt.style.display='block';
-    tt.innerHTML='<span style="color:#555;font-size:9px;">'+ts+'</span><br>'
-      +'<span style="color:'+col+';">'
-      +'A&nbsp;<b>'+f(c.open)+'</b>&emsp;'
-      +'H&nbsp;<b>'+f(c.high)+'</b>&emsp;'
-      +'L&nbsp;<b>'+f(c.low)+'</b>&emsp;'
-      +'C&nbsp;<b>'+f(c.close)+'</b></span>';
+    if(graficaMode==='candle'){
+      const c=param.seriesData.get(graficaCandleSeries);
+      if(!c){tt.style.display='none';return;}
+      const col=c.close>=c.open?'#26a69a':'#ef5350';
+      tt.style.display='block';
+      tt.innerHTML='<span style="color:#555;font-size:9px;">'+ts+'</span><br>'
+        +'<span style="color:'+col+';">'
+        +'A&nbsp;<b>'+f(c.open)+'</b>&emsp;'
+        +'H&nbsp;<b>'+f(c.high)+'</b>&emsp;'
+        +'L&nbsp;<b>'+f(c.low)+'</b>&emsp;'
+        +'C&nbsp;<b>'+f(c.close)+'</b></span>';
+    } else {
+      const d=param.seriesData.get(graficaAreaSeries);
+      if(!d){tt.style.display='none';return;}
+      tt.style.display='block';
+      tt.innerHTML='<span style="color:#555;font-size:9px;">'+ts+'</span><br>'
+        +'<span style="color:#FFD700;font-size:13px;"><b>'+f(d.value)+'</b></span>';
+    }
   });
   if(window._grafResizeObs) window._grafResizeObs.disconnect();
   window._grafResizeObs=new ResizeObserver(()=>{
@@ -975,18 +996,24 @@ function crearGraficaTradingView(){
 }
 
 function dibujarGraficaUnificada(){
-  if(!graficaChartInst) crearGraficaTradingView();
+  const mode=['1H','2H'].includes(graficaPeriodo)?'candle':'area';
+  if(!graficaChartInst||graficaMode!==mode) crearGraficaTradingView(mode);
   const isUSD=graficaTab==='onza';
-  graficaCandleSeries.applyOptions({
+  const activeSeries=mode==='candle'?graficaCandleSeries:graficaAreaSeries;
+  activeSeries.applyOptions({
     priceFormat:{type:'price',precision:isUSD?2:0,minMove:isUSD?0.01:1},
   });
   const {candles,volumes}=getGraficaData();
-  graficaCandleSeries.setData(candles);
+  if(mode==='candle'){
+    graficaCandleSeries.setData(candles);
+  } else {
+    graficaAreaSeries.setData(candles.map(c=>({time:c.time,value:c.close})));
+  }
   graficaVolumeSeries.setData(volumes);
-  if(graficaPriceLine){try{graficaCandleSeries.removePriceLine(graficaPriceLine);}catch(e){} graficaPriceLine=null;}
+  if(graficaPriceLine){try{activeSeries.removePriceLine(graficaPriceLine);}catch(e){} graficaPriceLine=null;}
   const cv=getCurVal();
   if(cv){
-    graficaPriceLine=graficaCandleSeries.createPriceLine({
+    graficaPriceLine=activeSeries.createPriceLine({
       price:cv,color:'#FFD700',lineWidth:1,
       lineStyle:LightweightCharts.LineStyle.Dashed,
       axisLabelVisible:true,title:'',
