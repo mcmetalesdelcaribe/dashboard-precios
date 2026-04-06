@@ -158,6 +158,78 @@ async function verificarAlertas(onza, dolar, context) {
     }
 }
 
+app.http('guardarminuto', {
+    methods: ['POST', 'OPTIONS'],
+    authLevel: 'anonymous',
+    handler: async (request, context) => {
+        if (request.method === 'OPTIONS') {
+            return { status: 204, headers: CORS_HEADERS, body: '' };
+        }
+        if (!validarToken(request)) {
+            return { status: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: 'No autorizado' }) };
+        }
+        try {
+            const body = await request.json();
+            const { onza, dolar } = body;
+            if (!onza || !dolar) throw new Error('Faltan datos');
+
+            const TABLE_MIN = 'historialminutos';
+            const minClient = TableClient.fromConnectionString(CONNECTION, TABLE_MIN);
+            await minClient.createTable();
+
+            // Dedup: omitir si ya existe un registro en el último minuto
+            const ahora = new Date();
+            const unMinutoAtras = new Date(ahora.getTime() - 60 * 1000);
+            const rowKeyMin = unMinutoAtras.toISOString().replace(/[:.]/g, '-');
+            const partHoy = ahora.toISOString().slice(0, 10);
+            const partAntes = unMinutoAtras.toISOString().slice(0, 10);
+
+            let yaExiste = false;
+            for (const pk of [...new Set([partAntes, partHoy])]) {
+                const filter = `PartitionKey eq '${pk}' and RowKey ge '${rowKeyMin}'`;
+                for await (const _ of minClient.listEntities({ queryOptions: { filter }, select: ['rowKey'] })) {
+                    yaExiste = true; break;
+                }
+                if (yaExiste) break;
+            }
+            if (yaExiste) {
+                return { status: 200, headers: CORS_HEADERS, body: JSON.stringify({ ok: true, omitido: true }) };
+            }
+
+            const rowKey = ahora.toISOString().replace(/[:.]/g, '-');
+            const partitionKey = ahora.toISOString().slice(0, 10);
+
+            await minClient.createEntity({
+                partitionKey, rowKey,
+                onza: parseFloat(onza),
+                dolar: parseFloat(dolar),
+                timestamp: ahora.toISOString(),
+                hora: ahora.toLocaleTimeString('es-CO', { timeZone: 'America/Bogota' }),
+                fecha: ahora.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })
+            });
+
+            // Limpiar registros de más de 48 horas (hasta 200 por invocación)
+            const cutoffPK = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString().slice(0, 10);
+            let deleteCount = 0;
+            for await (const e of minClient.listEntities({
+                queryOptions: { filter: `PartitionKey lt '${cutoffPK}'`, select: ['partitionKey', 'rowKey'] }
+            })) {
+                if (deleteCount >= 200) break;
+                await minClient.deleteEntity(e.partitionKey, e.rowKey).catch(() => {});
+                deleteCount++;
+            }
+
+            return {
+                status: 200,
+                headers: CORS_HEADERS,
+                body: JSON.stringify({ ok: true, guardado: rowKey })
+            };
+        } catch (e) {
+            return { status: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: e.message }) };
+        }
+    }
+});
+
 app.http('guardar', {
     methods: ['POST', 'OPTIONS'],
     authLevel: 'anonymous',

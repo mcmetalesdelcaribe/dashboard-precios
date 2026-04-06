@@ -674,13 +674,15 @@
 </main>
 
 <script>
-const API_BASE     = 'https://mc-metales-precios.azurewebsites.net/api';
-const API_ONZA     = API_BASE + '/onza';
-const API_DOLAR    = API_BASE + '/dolar';
-const API_GUARDAR  = API_BASE + '/guardar';
-const API_HISTORIAL= API_BASE + '/historial';
-const API_LOGIN    = API_BASE + '/login';
-const API_ALERTAS  = API_BASE + '/alertas';
+const API_BASE        = 'https://mc-metales-precios.azurewebsites.net/api';
+const API_ONZA        = API_BASE + '/onza';
+const API_DOLAR       = API_BASE + '/dolar';
+const API_GUARDAR     = API_BASE + '/guardar';
+const API_GUARDAR_MIN = API_BASE + '/guardarminuto';
+const API_HISTORIAL   = API_BASE + '/historial';
+const API_HIST_MIN    = API_BASE + '/historialminutos';
+const API_LOGIN       = API_BASE + '/login';
+const API_ALERTAS     = API_BASE + '/alertas';
 
 const TROY=31.1035, ITAL=0.74;
 const LEYES=[
@@ -868,15 +870,21 @@ function buildCandlesAndVolume(points,intervalMs){
   return {candles,volumes};
 }
 
-function getGraficaData(){
+async function getGraficaData(){
   const cfg=GRAFICA_CFG[graficaPeriodo];
   const cutoff=Date.now()-cfg.ms;
   let raw;
   if(cfg.src==='rt'){
-    raw=rtBuffer.filter(p=>p.ts>=cutoff).map(p=>({
-      ts:p.ts,
-      v:graficaTab==='onza'?p.o:graficaTab==='dolar'?p.d:Math.round((p.o*p.d)/TROY)
-    }));
+    try {
+      const res=await fetch(API_HIST_MIN,{headers:authHeaders()});
+      const data=await res.json();
+      raw=(data.registros||[])
+        .filter(p=>new Date(p.timestamp).getTime()>=cutoff)
+        .map(p=>({
+          ts:new Date(p.timestamp).getTime(),
+          v:graficaTab==='onza'?p.onza:graficaTab==='dolar'?p.dolar:Math.round((p.onza*p.dolar)/TROY)
+        }));
+    } catch(e){ raw=[]; }
   } else {
     raw=todosRegistros
       .map(r=>({ts:new Date(r.timestamp).getTime(),
@@ -995,7 +1003,7 @@ function crearGraficaTradingView(mode){
   window._grafResizeObs.observe(el.parentElement);
 }
 
-function dibujarGraficaUnificada(){
+async function dibujarGraficaUnificada(){
   const mode=['1H','2H'].includes(graficaPeriodo)?'candle':'area';
   if(!graficaChartInst||graficaMode!==mode) crearGraficaTradingView(mode);
   const isUSD=graficaTab==='onza';
@@ -1003,7 +1011,7 @@ function dibujarGraficaUnificada(){
   activeSeries.applyOptions({
     priceFormat:{type:'price',precision:isUSD?2:0,minMove:isUSD?0.01:1},
   });
-  const {candles,volumes}=getGraficaData();
+  const {candles,volumes}=await getGraficaData();
   if(mode==='candle'){
     graficaCandleSeries.setData(candles);
   } else {
@@ -1111,6 +1119,13 @@ async function guardarPrecios(){
   } catch(e){}
 }
 
+async function guardarMinuto(){
+  if(!cur.o||!cur.d) return;
+  try {
+    await fetch(API_GUARDAR_MIN,{method:'POST',headers:authHeaders(),body:JSON.stringify({onza:cur.o,dolar:cur.d})});
+  } catch(e){}
+}
+
 async function fetchAll(){
   setBadge('Cargando...','load');
   document.getElementById('btn-refresh').classList.add('spinning');
@@ -1150,7 +1165,7 @@ async function fetchAll(){
     if(rH.value.precioAyer&&cur.o&&cur.d) mostrarComparativa(rH.value.precioAyer);
   }
   prev={o:po,d:pd};
-  if(okO&&okD){ setBadge('En vivo','live'); guardarPrecios(); }
+  if(okO&&okD){ setBadge('En vivo','live'); guardarPrecios(); guardarMinuto(); }
   else if(okO||okD) setBadge('Parcial','man');
   else setBadge('Sin conexión','err');
   if(cur.o&&cur.d){ render(); rtPush(cur.o,cur.d); updateHero(); }

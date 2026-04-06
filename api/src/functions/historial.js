@@ -21,6 +21,53 @@ function validarToken(request) {
     return token === esperado;
 }
 
+app.http('historialminutos', {
+    methods: ['GET', 'OPTIONS'],
+    authLevel: 'anonymous',
+    handler: async (request, context) => {
+        if (request.method === 'OPTIONS') {
+            return { status: 204, headers: CORS, body: '' };
+        }
+        if (!validarToken(request)) {
+            return { status: 401, headers: CORS, body: JSON.stringify({ error: 'No autorizado' }) };
+        }
+        try {
+            const TABLE_MIN = 'historialminutos';
+            const client = TableClient.fromConnectionString(CONNECTION, TABLE_MIN);
+            await client.createTable();
+
+            // Consultar las últimas 48h (rangos de particiones posibles)
+            const ahora = new Date();
+            const desde = new Date(ahora.getTime() - 48 * 60 * 60 * 1000);
+            const particiones = [...new Set([
+                desde.toISOString().slice(0, 10),
+                new Date(ahora.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+                ahora.toISOString().slice(0, 10)
+            ])];
+
+            const registros = [];
+            for (const pk of particiones) {
+                for await (const e of client.listEntities({ queryOptions: { filter: `PartitionKey eq '${pk}'` } })) {
+                    if (new Date(e.timestamp) >= desde) {
+                        registros.push({ onza: e.onza, dolar: e.dolar, timestamp: e.timestamp });
+                    }
+                }
+            }
+
+            // Ordenar ascendente, retornar últimos 120 registros (2 horas de minutos)
+            registros.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            return {
+                status: 200,
+                headers: CORS,
+                body: JSON.stringify({ registros: registros.slice(-120) })
+            };
+        } catch (e) {
+            return { status: 500, headers: CORS, body: JSON.stringify({ error: e.message }) };
+        }
+    }
+});
+
 app.http('historial', {
     methods: ['GET', 'OPTIONS'],
     authLevel: 'anonymous',
