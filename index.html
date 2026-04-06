@@ -1053,8 +1053,8 @@ async function dibujarGraficaUnificada(){
         axisLabelVisible:true,title:'',
       });
     }
-    graficaChartInst.timeScale().applyOptions({barSpacing:6,rightOffset:3});
-    graficaChartInst.timeScale().scrollToRealTime();
+    graficaChartInst.timeScale().applyOptions({barSpacing:12,rightOffset:3});
+    graficaChartInst.timeScale().fitContent();
     actualizarInfoGrafica(candles);
     console.log('[graf] OK — '+candles.length+' candles renderizados');
   } catch(e){
