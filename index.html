@@ -470,7 +470,9 @@
       </div>
       <div class="card-src" id="onza-src">Consultando...</div>
       <button class="card-pencil" onclick="toggleManual('onza')" title="Ingresar manualmente">✎</button>
-      <input type="number" id="onza-i" class="card-input" placeholder="Manual..." step="0.1" oninput="manual('o')">
+      <input type="number" id="onza-i" class="card-input" placeholder="Onza USD..." step="0.1"
+        onkeydown="if(event.key==='Enter'){manual('o');this.classList.remove('visible');}"
+        onblur="manual('o');this.classList.remove('visible');">
     </div>
     <!-- Dólar -->
     <div class="card">
@@ -481,7 +483,9 @@
       </div>
       <div class="card-src" id="dolar-src">Consultando...</div>
       <button class="card-pencil" onclick="toggleManual('dolar')" title="Ingresar manualmente">✎</button>
-      <input type="number" id="dolar-i" class="card-input" placeholder="Manual..." step="1" oninput="manual('d')">
+      <input type="number" id="dolar-i" class="card-input" placeholder="Dólar COP..." step="1"
+        onkeydown="if(event.key==='Enter'){manual('d');this.classList.remove('visible');}"
+        onblur="manual('d');this.classList.remove('visible');">
     </div>
     <!-- Internacional -->
     <div class="card">
@@ -492,7 +496,9 @@
       </div>
       <div class="card-src">Onza × Dólar ÷ 31.1035</div>
       <button class="card-pencil" onclick="toggleManual('reg')" title="Editar regalías">✎</button>
-      <input type="number" id="reg-i" class="card-input" value="18965.39" step="0.01" oninput="manual('r')" placeholder="Regalías COP/g">
+      <input type="number" id="reg-i" class="card-input" value="18965.39" step="0.01" placeholder="Regalías COP/g"
+        onkeydown="if(event.key==='Enter'){manual('r');this.classList.remove('visible');}"
+        onblur="manual('r');this.classList.remove('visible');">
     </div>
     <!-- Variación vs ayer -->
     <div class="comp-card">
