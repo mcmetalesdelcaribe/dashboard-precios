@@ -30,6 +30,8 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 
   <style>
     :root {
@@ -177,12 +179,14 @@
     .delta-dn { color: var(--dn); }
     .card-src { font-size: 9px; color: #555; margin-top: 6px; }
     .card-pencil {
-      position: absolute; top: 10px; right: 10px;
-      background: none; border: 1px solid transparent; color: var(--dim);
-      cursor: pointer; font-size: 13px; padding: 2px 5px; border-radius: 4px;
-      line-height: 1; transition: color .15s, border-color .15s;
+      position: absolute; top: 8px; right: 8px;
+      width: 32px; height: 32px;
+      background: rgba(255,215,0,0.12); border: 1px solid #FFD700; color: #FFD700;
+      cursor: pointer; font-size: 15px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, color .15s;
     }
-    .card-pencil:hover { color: var(--gold); border-color: var(--border); }
+    .card-pencil:hover { background: #FFD700; color: #000; }
     .card-input {
       display: none; margin-top: 10px;
       width: 100%; background: #1a1a1a; border: 1px solid #333; border-radius: 6px;
@@ -190,18 +194,30 @@
     }
     .card-input:focus { outline: none; border-color: var(--gold); }
     .card-input.visible { display: block; }
+    /* Light cards */
+    .card.card-light { background: #ffffff; border-color: #ddd; }
+    .card.card-light .card-label { color: #999; }
+    .card.card-light .card-price { color: #111; }
+    .card.card-light .card-src { color: #bbb; }
+    .card.card-light .card-input { background: #f5f5f5; border-color: #ddd; color: #111; }
     /* Comp card */
     .comp-card {
-      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+      background: #ffffff; border: 1px solid #ddd; border-radius: 10px;
       padding: 1rem 1.1rem 0.9rem;
     }
+    .comp-card .card-label { color: #999; }
+    .comp-input {
+      background: #f5f5f5; border: 1px solid #ddd; border-radius: 5px;
+      padding: 5px 7px; font-size: 11px; color: #333; font-family: var(--mono);
+    }
+    .comp-input:focus { outline: none; border-color: var(--gold); }
     .comp-row {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 7px 0; border-bottom: 1px solid var(--border);
+      padding: 7px 0; border-bottom: 1px solid #eee;
     }
     .comp-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .comp-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-    .comp-val { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--gold); }
+    .comp-label { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 0.08em; }
+    .comp-val { font-family: var(--mono); font-size: 13px; font-weight: 600; color: #b8860b; }
     .comp-delta { font-family: var(--mono); font-size: 11px; font-weight: 700; }
     .comp-up { color: var(--up); }
     .comp-dn { color: var(--dn); }
@@ -223,6 +239,9 @@
     }
     .vc .vl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
     .vc .vv { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--text); }
+    .vc:nth-child(even) { background: #ffffff; border-color: #ddd; }
+    .vc:nth-child(even) .vl { color: #999; }
+    .vc:nth-child(even) .vv { color: #111; }
 
     /* ── TABS NAV ──────────────────────────────────────── */
     .tabs-bar {
@@ -242,11 +261,11 @@
 
     /* ── TABLE ─────────────────────────────────────────── */
     table {
-      width: 100%; border-collapse: collapse; background: var(--card);
-      border-radius: 10px; overflow: hidden; border: 1px solid var(--border);
+      width: 100%; border-collapse: collapse; background: #ffffff;
+      border-radius: 10px; overflow: hidden; border: 1px solid #e0e0e0;
     }
     th {
-      background: #0d0d0d; color: var(--gold);
+      background: #f7f7f7; color: #1a1a1a;
       font-family: var(--mono); font-size: 10px; padding: 10px 12px;
       text-align: right; letter-spacing: 0.06em; font-weight: 600;
     }
@@ -254,14 +273,14 @@
     td {
       padding: 8px 12px; text-align: right;
       font-family: var(--mono); font-size: 12px;
-      border-bottom: 1px solid #181818; color: #bbb;
+      border-bottom: 1px solid #eeeeee; color: #333;
     }
-    td:first-child { text-align: left; font-weight: 600; color: var(--muted); font-family: var(--sans); font-size: 12px; }
-    tr:hover td { background: #161616; }
-    tr.hl td { background: #0d1a0e; }
+    td:first-child { text-align: left; font-weight: 600; color: #555; font-family: var(--sans); font-size: 12px; }
+    tr:hover td { background: #f5f5f5; }
+    tr.hl td { background: #e8f5e9; }
     tr.hl td:first-child { color: var(--up); }
-    tr.selected td { background: rgba(255,215,0,.10) !important; }
-    tr.selected td:first-child { color: var(--gold) !important; }
+    tr.selected td { background: rgba(255,165,0,.12) !important; }
+    tr.selected td:first-child { color: #b8860b !important; }
 
     /* ── HIST TABLE ────────────────────────────────────── */
     .hist-filtros {
@@ -289,9 +308,12 @@
 
     /* ── CHART ─────────────────────────────────────────── */
     .chart-container {
-      background: var(--card); border: 1px solid var(--border);
+      background: #ffffff; border: 1px solid #e0e0e0;
       border-radius: 10px; padding: 1rem; margin-bottom: 1rem;
     }
+    .gi-label { color: #888; }
+    .gi-precio { color: #111; }
+    .gi-minmax { color: #888; }
     .chart-tabs { display: flex; gap: 6px; }
     .chart-tab {
       padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
@@ -469,7 +491,7 @@
   <!-- 4 tarjetas de precios -->
   <div class="cards-row">
     <!-- Onza -->
-    <div class="card">
+    <div class="card card-light">
       <div class="card-label">Onza Troy Bid — Kitco (USD)</div>
       <div class="card-price-row">
         <span class="card-price" id="onza-v">—</span>
@@ -482,7 +504,7 @@
         onblur="manual('o');this.classList.remove('visible');">
     </div>
     <!-- Dólar -->
-    <div class="card">
+    <div class="card card-light">
       <div class="card-label">Dólar Compra — Banco de Bogotá (COP)</div>
       <div class="card-price-row">
         <span class="card-price" id="dolar-v">—</span>
@@ -495,7 +517,7 @@
         onblur="manual('d');this.classList.remove('visible');">
     </div>
     <!-- Internacional -->
-    <div class="card">
+    <div class="card card-light">
       <div class="card-label">Internacional (COP/g)</div>
       <div class="card-price-row">
         <span class="card-price" id="intl-v">—</span>
@@ -507,18 +529,24 @@
         onkeydown="if(event.key==='Enter'){manual('r');this.classList.remove('visible');}"
         onblur="manual('r');this.classList.remove('visible');">
     </div>
-    <!-- Variación vs ayer -->
+    <!-- Comparar con fecha histórica -->
     <div class="comp-card">
-      <div class="card-label">Variación vs ayer 9:00 am</div>
-      <div class="comp-row">
+      <div class="card-label">Comparar con fecha histórica</div>
+      <div style="display:flex;gap:5px;margin-bottom:7px;">
+        <input type="date" id="comp-fecha" class="comp-input" style="flex:1;">
+        <input type="time" id="comp-hora" value="09:00" class="comp-input" style="width:76px;">
+      </div>
+      <button class="btn btn-gold btn-sm" onclick="buscarComparativa()" style="width:100%;margin-bottom:8px;">Consultar</button>
+      <div id="comp-result" style="font-size:9px;color:#aaa;margin-bottom:4px;font-family:'IBM Plex Mono',monospace;min-height:14px;"></div>
+      <div class="comp-row" id="comp-row-onza" style="display:none;">
         <div><div class="comp-label">Onza (USD)</div><div class="comp-val" id="comp-onza-val">—</div></div>
         <span class="comp-delta" id="comp-onza-delta">—</span>
       </div>
-      <div class="comp-row">
+      <div class="comp-row" id="comp-row-dolar" style="display:none;">
         <div><div class="comp-label">Dólar (COP)</div><div class="comp-val" id="comp-dolar-val">—</div></div>
         <span class="comp-delta" id="comp-dolar-delta">—</span>
       </div>
-      <div class="comp-row">
+      <div class="comp-row" id="comp-row-intl" style="display:none;">
         <div><div class="comp-label">Internacional</div><div class="comp-val" id="comp-intl-val">—</div></div>
         <span class="comp-delta" id="comp-intl-delta">—</span>
       </div>
@@ -579,6 +607,7 @@
           <button class="periodo-btn" onclick="setGraficaPeriodo('1D',this)">1D</button>
           <button class="periodo-btn" onclick="setGraficaPeriodo('7D',this)">7D</button>
           <button class="periodo-btn" onclick="setGraficaPeriodo('1M',this)">1M</button>
+          <button class="periodo-btn" onclick="resetarZoom()" title="Restablecer zoom" style="border-color:#555;color:#777;">↺</button>
         </div>
       </div>
       <div class="gi-bar">
@@ -804,25 +833,62 @@ function updateHero(){
   }
 }
 
-function mostrarComparativa(precioAyer){
-  if(!precioAyer||!cur.o||!cur.d) return;
+function mostrarComparativa(ref){
+  if(!ref||!cur.o||!cur.d) return;
   const intlHoy=(cur.o*cur.d)/TROY;
-  const intlAyer=(precioAyer.onza*precioAyer.dolar)/TROY;
-  document.getElementById('comp-onza-val').textContent='$ '+fmtU(precioAyer.onza);
-  const diffO=cur.o-precioAyer.onza;
+  const intlRef=(ref.onza*ref.dolar)/TROY;
+  document.getElementById('comp-onza-val').textContent='$ '+fmtU(ref.onza);
+  const diffO=cur.o-ref.onza;
   const elO=document.getElementById('comp-onza-delta');
   elO.className='comp-delta '+(diffO>0?'comp-up':'comp-dn');
   elO.textContent=(diffO>0?'▲ +':'▼ ')+fmtU(Math.abs(diffO));
-  document.getElementById('comp-dolar-val').textContent='$ '+fmt(precioAyer.dolar);
-  const diffD=cur.d-precioAyer.dolar;
+  document.getElementById('comp-dolar-val').textContent='$ '+fmt(ref.dolar);
+  const diffD=cur.d-ref.dolar;
   const elD=document.getElementById('comp-dolar-delta');
   elD.className='comp-delta '+(diffD>0?'comp-up':'comp-dn');
   elD.textContent=(diffD>0?'▲ +':'▼ ')+fmt(Math.abs(diffD));
-  document.getElementById('comp-intl-val').textContent='$ '+fmt(intlAyer);
-  const diffI=intlHoy-intlAyer;
+  document.getElementById('comp-intl-val').textContent='$ '+fmt(intlRef);
+  const diffI=intlHoy-intlRef;
   const elI=document.getElementById('comp-intl-delta');
   elI.className='comp-delta '+(diffI>0?'comp-up':'comp-dn');
   elI.textContent=(diffI>0?'▲ +':'▼ ')+fmt(Math.abs(diffI));
+  ['comp-row-onza','comp-row-dolar','comp-row-intl'].forEach(id=>{
+    document.getElementById(id).style.display='flex';
+  });
+}
+
+async function buscarComparativa(){
+  const fecha=document.getElementById('comp-fecha').value;
+  const hora=document.getElementById('comp-hora').value||'09:00';
+  const resultEl=document.getElementById('comp-result');
+  if(!fecha){resultEl.textContent='Selecciona una fecha.';return;}
+  if(!cur.o||!cur.d){resultEl.textContent='Carga los precios primero.';return;}
+  const target=new Date(fecha+'T'+hora+':00').getTime();
+  let registros=todosRegistros;
+  if(!registros.length){
+    resultEl.textContent='Cargando historial...';
+    try{
+      const res=await fetch(API_HISTORIAL,{headers:authHeaders()});
+      if(res.status===401){handleUnauthorized();return;}
+      const data=await res.json();
+      todosRegistros=data.registros||[];
+      registros=todosRegistros;
+    }catch(e){resultEl.textContent='Error al cargar historial.';return;}
+  }
+  if(!registros.length){resultEl.textContent='Sin datos históricos disponibles.';return;}
+  let best=null,bestDiff=Infinity;
+  for(const r of registros){
+    const diff=Math.abs(new Date(r.timestamp).getTime()-target);
+    if(diff<bestDiff){bestDiff=diff;best=r;}
+  }
+  if(!best){resultEl.textContent='No se encontró registro cercano.';return;}
+  const diffMins=Math.round(bestDiff/60000);
+  resultEl.textContent=`${best.fecha} ${best.hora} (±${diffMins} min)`;
+  mostrarComparativa(best);
+}
+
+function resetarZoom(){
+  if(graficaChartInst) graficaChartInst.resetZoom();
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -891,8 +957,8 @@ function crearGraficaChartJS(){
         legend:{display:false},
         tooltip:{
           mode:'index',intersect:false,
-          backgroundColor:'rgba(10,10,10,0.95)',borderColor:'#2a2a2a',borderWidth:1,
-          titleColor:'#666',bodyColor:col.line,padding:10,
+          backgroundColor:'rgba(10,10,10,0.92)',borderColor:'#ddd',borderWidth:1,
+          titleColor:'#888',bodyColor:col.line,padding:10,
           titleFont:{family:'IBM Plex Mono',size:9},
           bodyFont:{family:'IBM Plex Mono',size:13,weight:'bold'},
           callbacks:{
@@ -900,21 +966,25 @@ function crearGraficaChartJS(){
               return graficaTab==='onza'?'$ '+fmtU(item.raw):'$ '+fmt(item.raw);
             }
           }
+        },
+        zoom:{
+          pan:{enabled:true,mode:'x'},
+          zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'}
         }
       },
       scales:{
         x:{
-          grid:{color:'#222222',drawBorder:false},
-          ticks:{color:'#555',font:{family:'IBM Plex Mono',size:10},maxTicksLimit:6,maxRotation:0},
-          border:{color:'#333'}
+          grid:{color:'#eeeeee',drawBorder:false},
+          ticks:{color:'#888',font:{family:'IBM Plex Mono',size:10},maxTicksLimit:6,maxRotation:0},
+          border:{color:'#ddd'}
         },
         y:{
           position:'right',
-          grid:{color:'#1e1e1e',drawBorder:false},
-          ticks:{color:'#555',font:{family:'IBM Plex Mono',size:10},
+          grid:{color:'#eeeeee',drawBorder:false},
+          ticks:{color:'#888',font:{family:'IBM Plex Mono',size:10},
             callback(v){return isUSD?fmtU(v):fmt(v);}
           },
-          border:{color:'#333'}
+          border:{color:'#ddd'}
         }
       },
       interaction:{intersect:false,mode:'index'}
@@ -1102,7 +1172,6 @@ async function verHistorial(){
     if(res.status===401){ handleUnauthorized(); return; }
     const data=await res.json();
     todosRegistros=data.registros||[];
-    if(data.precioAyer&&cur.o&&cur.d) mostrarComparativa(data.precioAyer);
     renderTablaHist(getFiltrados());
     if(graficaVisible&&['1D','7D','1M'].includes(graficaPeriodo)) dibujarGraficaUnificada();
   } catch(e){
@@ -1160,10 +1229,6 @@ async function fetchAll(){
   }
   if(rH.status==='fulfilled'){
     todosRegistros=rH.value.registros||[];
-    console.log('[fetchAll] todosRegistros cargados:',todosRegistros.length);
-    if(rH.value.precioAyer&&cur.o&&cur.d) mostrarComparativa(rH.value.precioAyer);
-  } else {
-    console.warn('[fetchAll] historial falló:',rH.reason);
   }
   prev={o:po,d:pd};
   if(okO&&okD){ setBadge('En vivo','live'); guardarPrecios(); guardarMinuto(); }
@@ -1325,11 +1390,14 @@ function updateClock(){
 function initApp(){
   document.getElementById('fecha').textContent=
     new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const ayer=new Date(); ayer.setDate(ayer.getDate()-1);
+  document.getElementById('comp-fecha').value=ayer.toISOString().slice(0,10);
   updateClock();
   setInterval(updateClock, 1000);
   fetchAll();
   setInterval(fetchAll, 60*1000);
   setInterval(guardarPrecios, 30*60*1000);
+  setInterval(guardarMinuto, 60*1000);
 }
 
 // Al cargar: verificar sesión existente
