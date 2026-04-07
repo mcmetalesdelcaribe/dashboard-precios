@@ -83,11 +83,12 @@
       display: flex; align-items: center; justify-content: space-between;
       position: sticky; top: 0; z-index: 100;
     }
-    .hdr-left { display: flex; align-items: center; gap: 14px; }
-    .hdr-right { display: flex; align-items: center; gap: 6px; }
-    .hdr-brand { display: flex; flex-direction: column; gap: 2px; }
+    .hdr-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .hdr-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto; }
+    .hdr-brand { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .hdr-brand-name { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 0.02em; }
     .hdr-brand-sub { font-size: 10px; color: var(--muted); }
+    .hdr-logo { height: 60px; display: block; flex-shrink: 0; }
     .hdr-clock {
       font-family: var(--mono); font-size: 14px; font-weight: 600;
       color: var(--muted); padding: 0 16px;
@@ -364,6 +365,12 @@
       .hdr-clock { display: none; }
       th,td { font-size: 10px; padding: 6px 7px; }
       .card-price { font-size: 24px; }
+      header { height: 54px; padding: 0 0.75rem; }
+      .hdr-logo { height: 36px; }
+      .hdr-brand-sub { display: none; }
+      .hdr-brand-name { font-size: 11px; }
+      .hdr-left { gap: 8px; }
+      .hdr-right { gap: 4px; }
     }
   </style>
 </head>
@@ -383,7 +390,7 @@
 <!-- Header -->
 <header>
   <div class="hdr-left">
-    <img src="/icons/logo-mc.png" alt="MC Metales" style="height:60px;display:block;">
+    <img src="/icons/logo-mc.png" alt="MC Metales" class="hdr-logo">
     <div class="hdr-brand">
       <div class="hdr-brand-name">MC Metales del Caribe</div>
       <div class="hdr-brand-sub" id="fecha"></div>
@@ -1010,6 +1017,13 @@ async function dibujarGraficaUnificada(){
   ds.pointHoverBorderColor=col.line;
   graficaChartInst.options.plugins.tooltip.bodyColor=col.line;
   graficaChartInst.options.scales.y.ticks.callback=function(v){return isUSD?fmtU(v):fmt(v);};
+
+  // Eje Y: rango centrado en los datos ±0.5% del precio para que la línea tenga movimiento visible
+  const minV=Math.min(...values),maxV=Math.max(...values);
+  const pad=((minV+maxV)/2)*0.005;
+  graficaChartInst.options.scales.y.min=minV-pad;
+  graficaChartInst.options.scales.y.max=maxV+pad;
+
   graficaChartInst.data.labels=labels;
   ds.data=values;
   graficaChartInst.update('none');
