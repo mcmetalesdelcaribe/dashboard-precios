@@ -36,11 +36,11 @@ app.http('historialminutos', {
             const client = TableClient.fromConnectionString(CONNECTION, TABLE_MIN);
             await client.createTable();
 
-            // Soporte para ?horas=N (default 2, máximo 48)
+            // Soporte para ?minutos=N (default 120, máximo 2880)
             const url = new URL(request.url);
-            const horas = Math.min(48, Math.max(1, parseInt(url.searchParams.get('horas') || '2', 10)));
+            const minutos = Math.min(2880, Math.max(1, parseInt(url.searchParams.get('minutos') || '120', 10)));
             const ahora = new Date();
-            const desde = new Date(ahora.getTime() - horas * 60 * 60 * 1000);
+            const desde = new Date(ahora.getTime() - minutos * 60 * 1000);
 
             // Calcular particiones (días UTC) que abarca el rango
             const particiones = new Set();
@@ -87,12 +87,12 @@ app.http('historial', {
             const client = TableClient.fromConnectionString(CONNECTION, TABLE);
             await client.createTable();
 
-            // Soporte para ?dias=N (default = último año)
+            // Soporte para ?horas=N (default = último año)
             const histUrl = new URL(request.url);
-            const dias = parseInt(histUrl.searchParams.get('dias') || '0', 10);
+            const horasFiltro = parseInt(histUrl.searchParams.get('horas') || '0', 10);
             const desde = new Date();
-            if (dias > 0) {
-                desde.setDate(desde.getDate() - dias);
+            if (horasFiltro > 0) {
+                desde.setTime(desde.getTime() - horasFiltro * 60 * 60 * 1000);
             } else {
                 desde.setFullYear(desde.getFullYear() - 1);
             }
