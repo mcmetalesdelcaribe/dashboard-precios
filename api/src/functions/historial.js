@@ -36,14 +36,20 @@ app.http('historialminutos', {
             const client = TableClient.fromConnectionString(CONNECTION, TABLE_MIN);
             await client.createTable();
 
-            // Consultar las últimas 48h (rangos de particiones posibles)
+            // Soporte para ?horas=N (default 2, máximo 48)
+            const url = new URL(request.url);
+            const horas = Math.min(48, Math.max(1, parseInt(url.searchParams.get('horas') || '2', 10)));
             const ahora = new Date();
-            const desde = new Date(ahora.getTime() - 48 * 60 * 60 * 1000);
-            const particiones = [...new Set([
-                desde.toISOString().slice(0, 10),
-                new Date(ahora.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-                ahora.toISOString().slice(0, 10)
-            ])];
+            const desde = new Date(ahora.getTime() - horas * 60 * 60 * 1000);
+
+            // Calcular particiones (días UTC) que abarca el rango
+            const particiones = new Set();
+            const dIter = new Date(desde);
+            dIter.setUTCHours(0, 0, 0, 0);
+            while (dIter <= ahora) {
+                particiones.add(dIter.toISOString().slice(0, 10));
+                dIter.setUTCDate(dIter.getUTCDate() + 1);
+            }
 
             const registros = [];
             for (const pk of particiones) {
@@ -54,13 +60,12 @@ app.http('historialminutos', {
                 }
             }
 
-            // Ordenar ascendente, retornar últimos 120 registros (2 horas de minutos)
             registros.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
             return {
                 status: 200,
                 headers: CORS,
-                body: JSON.stringify({ registros: registros.slice(-120) })
+                body: JSON.stringify({ registros })
             };
         } catch (e) {
             return { status: 500, headers: CORS, body: JSON.stringify({ error: e.message }) };
@@ -82,8 +87,15 @@ app.http('historial', {
             const client = TableClient.fromConnectionString(CONNECTION, TABLE);
             await client.createTable();
 
+            // Soporte para ?dias=N (default = último año)
+            const histUrl = new URL(request.url);
+            const dias = parseInt(histUrl.searchParams.get('dias') || '0', 10);
             const desde = new Date();
-            desde.setFullYear(desde.getFullYear() - 1);
+            if (dias > 0) {
+                desde.setDate(desde.getDate() - dias);
+            } else {
+                desde.setFullYear(desde.getFullYear() - 1);
+            }
 
             const registros = [];
             const entidades = client.listEntities();
