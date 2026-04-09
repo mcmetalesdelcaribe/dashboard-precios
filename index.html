@@ -82,7 +82,9 @@
     main { max-width:1200px;margin:0 auto;padding:1.25rem 1rem 2rem; }
 
     /* ── PANELS ROW ── */
-    .panels-row { display:grid;grid-template-columns:2fr 1.4fr 1.4fr;gap:12px;margin-bottom:1.25rem;align-items:start; }
+    .panels-row { display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:1.25rem;align-items:stretch; }
+    .panels-col { display:flex;flex-direction:column;gap:12px;height:100%; }
+    .panels-col-fill { flex:1;min-height:0; }
     .panel { background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem; }
     .panel-label { font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px; }
 
@@ -224,11 +226,11 @@
 
     /* ── RESPONSIVE ── */
     @media(max-width:1100px){
-      .panels-row { grid-template-columns:1fr 1fr; }
-      .panels-row>.panel:first-child { grid-column:1 / -1; }
+      .panels-row { grid-template-columns:1.5fr 1fr; }
     }
     @media(max-width:900px){
       .panels-row { grid-template-columns:1fr; }
+      .panels-col { height:auto; }
       .cat-section { grid-template-columns:1fr; }
       .hist-filtros { grid-template-columns:1fr 1fr; }
       .alertas-grid { grid-template-columns:1fr 1fr; }
@@ -342,9 +344,7 @@
             <button class="chart-tab" onclick="setGraficaTab('dolar',this)">Dólar</button>
           </div>
           <div class="periodo-btns">
-            <button class="periodo-btn active" onclick="setGraficaPeriodo('1H',this)">1H</button>
-            <button class="periodo-btn" onclick="setGraficaPeriodo('2H',this)">2H</button>
-            <button class="periodo-btn" onclick="setGraficaPeriodo('1D',this)">1D</button>
+            <button class="periodo-btn active" onclick="setGraficaPeriodo('1D',this)">1D</button>
             <button class="periodo-btn" onclick="setGraficaPeriodo('7D',this)">7D</button>
             <button class="periodo-btn" onclick="setGraficaPeriodo('1M',this)">1M</button>
             <button class="periodo-btn" onclick="resetarZoom()" style="border-color:#555;color:#777;">↺</button>
@@ -371,6 +371,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Columna derecha: Panel 2 + Panel 3 apilados -->
+    <div class="panels-col">
 
     <!-- Panel 2: Valores de referencia -->
     <div class="panel">
@@ -415,7 +418,7 @@
     </div>
 
     <!-- Panel 3: Comparación histórica -->
-    <div class="panel">
+    <div class="panel panels-col-fill">
       <div class="panel-label">Comparar con fecha histórica</div>
       <div style="display:flex;gap:5px;margin-bottom:7px;">
         <input type="date" id="comp-fecha" class="comp-input" style="flex:1;">
@@ -436,6 +439,8 @@
         <span class="comp-delta" id="comp-intl-delta">—</span>
       </div>
     </div>
+
+    </div><!-- /panels-col -->
   </div>
 
   <!-- ── PRECIOS DE COMPRA ── -->
@@ -447,21 +452,10 @@
     <!-- Izquierda 40%: categorías -->
     <div class="cat-list" id="vgrid"></div>
 
-    <!-- Derecha 60%: tabla de leyes -->
+    <!-- Derecha 60%: calculadora arriba + tabla de leyes -->
     <div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>Ley</th><th>Internacional COP/g</th><th>Base bruta</th>
-              <th>Retefuente</th><th>Base Puro neto</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
       <!-- Calculadora ley personalizada -->
-      <div class="ley-custom">
+      <div class="ley-custom" style="margin-top:0;margin-bottom:12px;">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Ley personalizada</span>
           <input type="number" id="ley-custom-pct" style="width:70px;background:#1a1a1a;border:1px solid #333;border-radius:5px;padding:5px 8px;font-size:12px;color:var(--text);font-family:var(--mono);" step="0.1" min="0" max="100" placeholder="ej. 91.5"
@@ -474,6 +468,17 @@
           <div><div class="lcr-lbl">Retefuente</div><div class="lcr-val" id="lc-rete">—</div></div>
           <div><div class="lcr-lbl">Base Puro neto</div><div class="lcr-val" id="lc-neto">—</div></div>
         </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Ley</th><th>Internacional COP/g</th><th>Base bruta</th>
+              <th>Retefuente</th><th>Base Puro neto</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -609,8 +614,6 @@ const LEYES=[
   {l:'94%', f:.940},{l:'93.5%',f:.935},{l:'93%', f:.930},
   {l:'92%', f:.920},{l:'91.5%',f:.915},{l:'91%', f:.910},
   {l:'90.5%',f:.905},{l:'90%', f:.900},
-  {l:'88%', f:.880},{l:'86%', f:.860},
-  {l:'84%', f:.840},{l:'82%', f:.820},
 ];
 const VIT=[
   {n:'Puro',k:1},{n:'Monedas (880)',k:.880/.945},{n:'Italiano (740)',k:.740/.945},
@@ -623,7 +626,7 @@ let cur={o:null,d:null,r:18965.39,ret:0.025};
 let leySeleccionada=LEYES[3];
 let historialVisible=false,alertasVisible=false,simuladorVisible=false;
 let todosRegistros=[],histLimite=10;
-let graficaTab='intl',graficaPeriodo='1H';
+let graficaTab='intl',graficaPeriodo='1D';
 const fmt=n=>Math.round(n).toLocaleString('es-CO');
 const fmtU=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
