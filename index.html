@@ -199,19 +199,6 @@
     .alertas-toggle input[type=checkbox] { width:16px;height:16px;cursor:pointer;accent-color:var(--gold); }
     .alertas-nota { font-size:11px;color:#444;margin-top:8px; }
 
-    /* ── SIMULADOR ── */
-    .sim-panel { background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1rem; }
-    .sim-inputs { display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1rem; }
-    .sim-lbl { font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px; }
-    .sim-field-input { width:100%;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);font-family:var(--mono); }
-    .sim-field-input:focus { outline:none;border-color:var(--gold); }
-    .sim-ley-row { display:flex;align-items:flex-end;gap:16px;margin-bottom:1rem;flex-wrap:wrap; }
-    .sim-result { background:#0e0e0e;border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:1rem; }
-    .sim-result-row { display:flex;gap:24px;flex-wrap:wrap; }
-    .sr-lbl { font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px; }
-    .sr-val { font-family:var(--mono);font-size:20px;font-weight:700;color:var(--gold); }
-    .sim-vgrid { display:grid;grid-template-columns:repeat(4,1fr);gap:8px; }
-
     /* ── BUTTONS ── */
     .btn { padding:8px 16px;border-radius:7px;font-size:12px;cursor:pointer;border:1px solid var(--border);font-weight:600;font-family:var(--sans);transition:all .15s; }
     .btn-gold { background:var(--gold);color:#0a0a0a;border-color:var(--gold); }
@@ -234,7 +221,6 @@
       .cat-section { grid-template-columns:1fr; }
       .hist-filtros { grid-template-columns:1fr 1fr; }
       .alertas-grid { grid-template-columns:1fr 1fr; }
-      .sim-inputs { grid-template-columns:1fr 1fr; }
       .intl-big { font-size:38px; }
     }
     @media(max-width:600px){
@@ -247,8 +233,6 @@
       .hdr-brand-name { font-size:11px; }
       .hdr-left { gap:8px; }
       .hdr-right { gap:4px; }
-      .sim-inputs { grid-template-columns:1fr 1fr; }
-      .sim-vgrid { grid-template-columns:1fr 1fr; }
       .ley-custom-result { grid-template-columns:1fr; }
     }
   </style>
@@ -491,9 +475,6 @@
     <button class="tab-btn" id="btn-alertas" onclick="verAlertas()">
       <span class="tab-icon">🔔</span><span class="tab-label">Alertas</span>
     </button>
-    <button class="tab-btn" id="btn-simulador" onclick="verSimulador()">
-      <span class="tab-icon">🧮</span><span class="tab-label">Simulador</span>
-    </button>
   </nav>
 
   <!-- Historial -->
@@ -554,45 +535,6 @@
     </div>
   </div>
 
-  <!-- Simulador -->
-  <div id="simulador-container" style="display:none;">
-    <div class="sim-panel">
-      <div class="panel-label" style="margin-bottom:1rem;">Simulador de Precios — Todos los valores editables</div>
-      <div class="sim-inputs">
-        <div>
-          <label class="sim-lbl">Onza Troy (USD)</label>
-          <input type="number" id="sim-onza" class="sim-field-input" step="0.01" placeholder="ej. 3200" oninput="calcSim()">
-        </div>
-        <div>
-          <label class="sim-lbl">Dólar Compra (COP)</label>
-          <input type="number" id="sim-dolar" class="sim-field-input" step="1" placeholder="ej. 4200" oninput="calcSim()">
-        </div>
-        <div>
-          <label class="sim-lbl">Regalías (COP/g)</label>
-          <input type="number" id="sim-reg" class="sim-field-input" step="0.01" oninput="calcSim()">
-        </div>
-      </div>
-      <div class="sim-ley-row">
-        <div>
-          <label class="sim-lbl">Ley de cálculo (%)</label>
-          <input type="number" id="sim-ley" class="sim-field-input" style="width:120px;margin-top:4px;" step="0.5" min="1" max="100" placeholder="ej. 94.5" oninput="calcSim()">
-        </div>
-      </div>
-      <div class="sim-result" id="sim-result" style="display:none;">
-        <div class="sim-result-row">
-          <div><div class="sr-lbl">Internacional COP/g</div><div class="sr-val" id="sim-intl">—</div></div>
-          <div><div class="sr-lbl">Base bruta</div><div class="sr-val" id="sim-base">—</div></div>
-          <div><div class="sr-lbl">Retefuente</div><div class="sr-val" id="sim-rete">—</div></div>
-          <div><div class="sr-lbl">Base Puro neto</div><div class="sr-val" id="sim-neto">—</div></div>
-        </div>
-      </div>
-    </div>
-    <div class="sec-row" style="margin-top:0;">
-      <div class="sec-title">Categorías simuladas</div>
-    </div>
-    <div class="sim-vgrid" id="sim-vgrid"></div>
-  </div>
-
   <div class="sbar" id="sbar">Iniciando...</div>
 </main>
 
@@ -624,7 +566,7 @@ const VIT=[
 let prev={o:null,d:null};
 let cur={o:null,d:null,r:18965.39,ret:0.025};
 let leySeleccionada=LEYES[3];
-let historialVisible=false,alertasVisible=false,simuladorVisible=false;
+let historialVisible=false,alertasVisible=false;
 let todosRegistros=[],histLimite=10;
 let graficaTab='intl',graficaPeriodo='1D';
 const fmt=n=>Math.round(n).toLocaleString('es-CO');
@@ -1104,45 +1046,6 @@ async function guardarAlertas(){
     estado.textContent='Guardado.';
     setTimeout(()=>{estado.textContent='';},3000);
   }catch(e){estado.textContent='Error al guardar.';}
-}
-
-// ── Simulador ─────────────────────────────────────────────────────────────────
-function verSimulador(){
-  simuladorVisible=!simuladorVisible;
-  const container=document.getElementById('simulador-container');
-  const btn=document.getElementById('btn-simulador');
-  if(!simuladorVisible){container.style.display='none';btn.classList.remove('active');return;}
-  container.style.display='block';btn.classList.add('active');
-  // Pre-llenar con valores actuales
-  if(cur.o) document.getElementById('sim-onza').value=cur.o.toFixed(2);
-  if(cur.d) document.getElementById('sim-dolar').value=cur.d.toFixed(0);
-  document.getElementById('sim-reg').value=cur.r.toFixed(2);
-  document.getElementById('sim-ley').value='94.5';
-  calcSim();
-}
-
-function calcSim(){
-  const o=parseFloat(document.getElementById('sim-onza').value);
-  const d=parseFloat(document.getElementById('sim-dolar').value);
-  const r=parseFloat(document.getElementById('sim-reg').value)||18965.39;
-  const leyPct=parseFloat(document.getElementById('sim-ley').value)||94.5;
-  if(!o||!d) return;
-  const intl=(o*d)/TROY;
-  const f=leyPct/100;
-  const base=intl*f,rete=base*cur.ret,neto=base-rete-r;
-  document.getElementById('sim-intl').textContent='$ '+fmt(intl);
-  document.getElementById('sim-base').textContent='$ '+fmt(base);
-  document.getElementById('sim-rete').textContent='$ '+fmt(rete);
-  document.getElementById('sim-neto').textContent='$ '+fmt(neto);
-  document.getElementById('sim-result').style.display='block';
-  const svg=document.getElementById('sim-vgrid');
-  svg.innerHTML='';
-  VIT.forEach(v=>{
-    const c=document.createElement('div');
-    c.className='cat-item';
-    c.innerHTML=`<div class="vl">${v.n}</div><div class="vv">$ ${fmt(neto*v.k)}</div>`;
-    svg.appendChild(c);
-  });
 }
 
 // ── Guardar en Azure ──────────────────────────────────────────────────────────
