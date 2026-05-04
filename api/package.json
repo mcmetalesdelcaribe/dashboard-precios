@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/functions/*.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "func start",
     "test": "echo \"No tests yet...\""
