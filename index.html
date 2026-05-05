@@ -1305,7 +1305,8 @@ async function buscarPrecioHistorico(){
   if(!fechaEl.value||!horaEl.value){statusEl.textContent='Elige fecha y hora.';return;}
   // Colombia es siempre UTC-5 (sin horario de verano)
   // Construimos el timestamp objetivo en UTC usando offset fijo -05:00
-  const targetTs=new Date(fechaEl.value+'T'+horaEl.value+':00-05:00').getTime();
+  const targetDate=fechaEl.value;
+  const targetTs=new Date(targetDate+'T'+horaEl.value+':00-05:00').getTime();
   btn.disabled=true;
   statusEl.textContent='Buscando...';
   try{
