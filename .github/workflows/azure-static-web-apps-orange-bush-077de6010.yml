@@ -37,6 +37,13 @@ jobs:
           output_location: "" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
 
+      - name: Deploy Functions to mc-metales-precios
+        uses: Azure/functions-action@v1
+        with:
+          app-name: mc-metales-precios
+          package: api
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
