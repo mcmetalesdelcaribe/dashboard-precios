@@ -508,6 +508,31 @@
     </div>
   </div>
 
+  <!-- ── BUSCAR PRECIO HISTÓRICO ── -->
+  <div class="panel" style="margin-bottom:1.25rem;padding:14px 16px;">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+      <span style="color:var(--gold);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;">🕐 Publicar precio de hora anterior</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <label style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Fecha</label>
+        <input type="date" id="hist-buscar-fecha" style="background:var(--surface2);border:1px solid var(--border);color:var(--fg);border-radius:6px;padding:5px 8px;font-size:12px;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <label style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Hora</label>
+        <input type="time" id="hist-buscar-hora" style="background:var(--surface2);border:1px solid var(--border);color:var(--fg);border-radius:6px;padding:5px 8px;font-size:12px;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <label style="font-size:9px;color:var(--muted);opacity:0;">&nbsp;</label>
+        <button class="btn btn-dark btn-sm" onclick="buscarPrecioHistorico()" id="btn-buscar-hist">Buscar y capturar</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;min-width:160px;">
+        <label style="font-size:9px;color:var(--muted);opacity:0;">&nbsp;</label>
+        <span id="hist-buscar-status" style="font-size:11px;color:var(--muted);"></span>
+      </div>
+    </div>
+  </div>
+
   <!-- ── TABS ── -->
   <nav class="tabs-bar">
     <button class="tab-btn" id="btn-historial" onclick="verHistorial()">
@@ -1255,18 +1280,94 @@ async function publicarSitio(){
       onza:snapshot.onza,
       dolar:snapshot.dolar
     })});
-    if(res.status===401){handleUnauthorized();return;}
+    if(res.status===401){handleUnauthorized();btnPub.textContent=txtOrig;btnPub.disabled=false;return;}
+    if(!res.ok) throw new Error('Error del servidor: '+res.status);
     const data=await res.json();
-    if(data.ok){
-      setBadge('✓ Publicado al sitio','man');
-      setTimeout(()=>{if(cur.o&&cur.d)setBadge('En vivo','live');},5000);
-      liberarCongelado();
-    }
+    if(!data.ok) throw new Error(data.error||'Respuesta inválida del servidor');
+    setBadge('✓ Publicado al sitio','man');
+    setTimeout(()=>{if(cur.o&&cur.d)setBadge('En vivo','live');},5000);
+    liberarCongelado();
   }catch(e){
     setBadge('Error al publicar','err');
-    setTimeout(()=>{if(cur.o&&cur.d)setBadge('En vivo','live');},3000);
+    setTimeout(()=>{if(cur.o&&cur.d)setBadge('En vivo','live');},4000);
     btnPub.textContent=txtOrig;
     btnPub.disabled=false;
+  }
+}
+
+// ── Buscar precio histórico ───────────────────────────────────────────────────
+async function buscarPrecioHistorico(){
+  const fechaEl=document.getElementById('hist-buscar-fecha');
+  const horaEl=document.getElementById('hist-buscar-hora');
+  const statusEl=document.getElementById('hist-buscar-status');
+  const btn=document.getElementById('btn-buscar-hist');
+  if(!fechaEl.value||!horaEl.value){statusEl.textContent='Elige fecha y hora.';return;}
+  const targetMs=new Date(fechaEl.value+'T'+horaEl.value+':00').getTime();
+  const ahoraMs=Date.now();
+  if(targetMs>=ahoraMs){statusEl.textContent='La hora debe ser anterior a ahora.';return;}
+  const minutos=Math.ceil((ahoraMs-targetMs)/60000)+2; // buffer de 2 min
+  if(minutos>2880){statusEl.textContent='Máximo 48 h de historial.';return;}
+  btn.disabled=true;
+  statusEl.textContent='Buscando...';
+  try{
+    const res=await fetch(API_HIST_MIN+'?minutos='+minutos,{headers:authHeaders()});
+    if(res.status===401){handleUnauthorized();return;}
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const registros=data.registros||[];
+    if(!registros.length){statusEl.textContent='Sin datos en ese rango.';return;}
+    // Registro más cercano a targetMs
+    const mejor=registros.reduce((a,b)=>
+      Math.abs(new Date(b.timestamp).getTime()-targetMs)<Math.abs(new Date(a.timestamp).getTime()-targetMs)?b:a
+    );
+    const histOnza=mejor.onza;
+    const histDolar=mejor.dolar;
+    const horaStr=new Date(mejor.timestamp).toLocaleTimeString('es-CO',{timeZone:'America/Bogota',hour:'2-digit',minute:'2-digit'});
+    // Calcular precios con datos históricos + ley seleccionada actual
+    const intl=(histOnza*histDolar)/TROY;
+    const base=intl*leySeleccionada.f,rete=base*cur.ret,neto=base-rete-cur.r;
+    snapshot={
+      ley:leySeleccionada.l,
+      onza:histOnza,
+      dolar:histDolar,
+      hora:horaStr,
+      precios:{
+        puro:       round500(neto*VIT[0].k),
+        monedas22K: round500(neto*VIT[1].k),
+        italiano18K:round500(neto*VIT[2].k),
+        nacional18K:round500(neto*VIT[3].k),
+        blanco18K:  round500(neto*VIT[4].k),
+        kilate14K:  round500(neto*VIT[5].k),
+        tubular:    round500(neto*VIT[6].k),
+        kilate10K:  round500(neto*VIT[7].k),
+      }
+    };
+    congelado=true;
+    document.getElementById('snap-info').textContent=
+      'Histórico '+horaStr+' · Ley '+snapshot.ley+' · Onza $'+fmtU(histOnza)+' · Dólar $'+fmt(histDolar);
+    const grid=document.getElementById('snap-grid');
+    const items=[
+      {n:'Puro',v:snapshot.precios.puro},
+      {n:'Monedas 22K',v:snapshot.precios.monedas22K},
+      {n:'Italiano 18K',v:snapshot.precios.italiano18K},
+      {n:'Nacional 18K',v:snapshot.precios.nacional18K},
+      {n:'Blanco 18K',v:snapshot.precios.blanco18K},
+      {n:'14 Kilates',v:snapshot.precios.kilate14K},
+      {n:'Tubular',v:snapshot.precios.tubular},
+      {n:'10K / Bajos',v:snapshot.precios.kilate10K},
+    ];
+    grid.innerHTML=items.map(it=>`<div class="snap-item"><div class="vl">${it.n}</div><div class="vv">$ ${fmt(it.v)}</div></div>`).join('');
+    document.getElementById('panel-congelado').style.display='block';
+    const btnCap=document.getElementById('btn-capturar');
+    btnCap.classList.add('btn-capturar-activo');
+    btnCap.setAttribute('data-tip','Congelado — clic para liberar');
+    btnCap.onclick=liberarCongelado;
+    document.getElementById('panel-congelado').scrollIntoView({behavior:'smooth',block:'nearest'});
+    statusEl.textContent='';
+  }catch(e){
+    statusEl.textContent='Error al buscar datos históricos.';
+  }finally{
+    btn.disabled=false;
   }
 }
 
@@ -1355,6 +1456,11 @@ function initApp(){
     new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const ayer=new Date();ayer.setDate(ayer.getDate()-1);
   document.getElementById('comp-fecha').value=ayer.toISOString().slice(0,10);
+  // Inicializar buscador histórico con fecha de hoy y hora una hora atrás
+  const ahora=new Date();
+  document.getElementById('hist-buscar-fecha').value=ahora.toISOString().slice(0,10);
+  ahora.setHours(ahora.getHours()-1);
+  document.getElementById('hist-buscar-hora').value=ahora.toTimeString().slice(0,5);
   document.getElementById('reg-v').textContent='$ '+fmt(cur.r);
   document.getElementById('ret-v').textContent=(cur.ret*100).toFixed(2)+'%';
   updateClock();
