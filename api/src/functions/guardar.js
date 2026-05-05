@@ -293,3 +293,54 @@ app.http('guardar', {
         }
     }
 });
+
+// ── Publicar precios al sitio web ─────────────────────────────────────────────
+app.http('publicar-sitio', {
+    methods: ['POST', 'OPTIONS'],
+    authLevel: 'anonymous',
+    handler: async (request, context) => {
+        if (request.method === 'OPTIONS') {
+            return { status: 204, headers: CORS_HEADERS, body: '' };
+        }
+        if (!validarToken(request)) {
+            return { status: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: 'No autorizado' }) };
+        }
+        try {
+            const body = await request.json();
+            const { precios, ley, onza, dolar } = body;
+            if (!precios || typeof precios !== 'object') throw new Error('Faltan datos de precios');
+
+            context.log(`publicar-sitio: ley=${ley} puro=${precios.puro} onza=${onza} dolar=${dolar}`);
+
+            const ahora = new Date();
+            const client = TableClient.fromConnectionString(CONNECTION, 'preciositio');
+            try { await client.createTable(); } catch (_) {}
+
+            await client.upsertEntity({
+                partitionKey: 'precio',
+                rowKey: 'publicado',
+                puro:        Number(precios.puro        ?? 0),
+                monedas22K:  Number(precios.monedas22K  ?? 0),
+                italiano18K: Number(precios.italiano18K ?? 0),
+                nacional18K: Number(precios.nacional18K ?? 0),
+                blanco18K:   Number(precios.blanco18K   ?? 0),
+                kilate14K:   Number(precios.kilate14K   ?? 0),
+                tubular:     Number(precios.tubular     ?? 0),
+                kilate10K:   Number(precios.kilate10K   ?? 0),
+                ley:         String(ley   ?? ''),
+                onza:        Number(onza  ?? 0),
+                dolar:       Number(dolar ?? 0),
+                publicadoEn: ahora.toISOString(),
+            }, 'Merge');
+
+            return {
+                status: 200,
+                headers: CORS_HEADERS,
+                body: JSON.stringify({ ok: true, timestamp: ahora.toISOString() })
+            };
+        } catch (e) {
+            context.log('Error en publicar-sitio:', e.message);
+            return { status: 500, headers: CORS_HEADERS, body: JSON.stringify({ ok: false, error: e.message }) };
+        }
+    }
+});
