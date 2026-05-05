@@ -1328,7 +1328,7 @@ async function buscarPrecioHistorico(){
     const histOnza=mejor.onza;
     const histDolar=mejor.dolar;
     // Mostrar la hora colombiana guardada en el registro
-    const horaStr=mejor.hora||new Date(mejor.timestamp).toLocaleTimeString('es-CO',{timeZone:'America/Bogota',hour:'2-digit',minute:'2-digit'});
+    const horaStr=new Date(mejor.timestamp).toLocaleTimeString('es-CO',{timeZone:'America/Bogota',hour:'2-digit',minute:'2-digit'});
     // Calcular precios con datos históricos + ley seleccionada actual
     const intl=(histOnza*histDolar)/TROY;
     const base=intl*leySeleccionada.f,rete=base*cur.ret,neto=base-rete-cur.r;
