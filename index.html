@@ -219,6 +219,9 @@
     .btn-dark { background:transparent;color:var(--text);border-color:var(--border); }
     .btn-dark:hover { border-color:#444;background:#1a1a1a; }
     .btn-sm { padding:5px 12px;font-size:11px; }
+    .snap-item { background:#0e0e0e;border:1px solid rgba(218,165,32,0.25);border-left:3px solid var(--gold);border-radius:8px;padding:0.7rem 1rem; }
+    .panel-snap { border-color:rgba(218,165,32,0.35) !important;background:rgba(218,165,32,0.04) !important; }
+    .btn-capturar-activo { color:var(--gold) !important;border-color:var(--gold) !important; }
 
     /* ── STATUS BAR ── */
     .sbar { font-size:10px;color:var(--muted);margin-top:1.5rem;text-align:right;padding-bottom:2rem;font-family:var(--mono); }
@@ -288,6 +291,11 @@
         <polyline points="14,2 14,8 20,8"/>
         <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
         <polyline points="10,9 9,9 8,9"/>
+      </svg>
+    </button>
+    <button class="hdr-btn gold-icon" id="btn-capturar" data-tip="Capturar precios para publicar" onclick="capturar()" title="Capturar precios">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
       </svg>
     </button>
     <button class="hdr-btn" data-tip="Copiar precios" onclick="copiar()" title="Copiar precios">
@@ -483,6 +491,23 @@
     </div>
   </div>
 
+  <!-- ── PANEL CONGELADO ── -->
+  <div id="panel-congelado" style="display:none;margin-bottom:1.25rem;">
+    <div class="panel panel-snap">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div>
+          <span style="color:var(--gold);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;">⏸ Precios capturados</span>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px;" id="snap-info"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-gold btn-sm" onclick="publicarSitio()">↑ Publicar al sitio web</button>
+          <button class="btn btn-dark btn-sm" onclick="liberarCongelado()">↺ Liberar</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" id="snap-grid"></div>
+    </div>
+  </div>
+
   <!-- ── TABS ── -->
   <nav class="tabs-bar">
     <button class="tab-btn" id="btn-historial" onclick="verHistorial()">
@@ -605,7 +630,8 @@ const API_GUARDAR_MIN = API_BASE + '/guardarminuto';
 const API_HISTORIAL   = API_BASE + '/historial';
 const API_HIST_MIN    = API_BASE + '/historialminutos';
 const API_LOGIN       = API_BASE + '/login';
-const API_ALERTAS     = API_BASE + '/alertas';
+const API_ALERTAS        = API_BASE + '/alertas';
+const API_PUBLICAR_SITIO = API_BASE + '/publicar-sitio';
 
 const TROY=31.1035, ITAL=0.74;
 const LEYES=[
@@ -623,6 +649,9 @@ const VIT=[
 
 let prev={o:null,d:null};
 let cur={o:null,d:null,r:18965.39,ret:0.025};
+let snapshot=null;
+let congelado=false;
+const round500=v=>Math.round(v/500)*500;
 let leySeleccionada=LEYES[3];
 let historialVisible=false,alertasVisible=false,simuladorVisible=false;
 let todosRegistros=[],histLimite=10;
@@ -929,9 +958,66 @@ function setGraficaPeriodo(p,btn){
 
 // ── Render ────────────────────────────────────────────────────────────────────
 function render(){
+  if(congelado) return;
   if(!cur.o||!cur.d) return;
   renderVitrina(leySeleccionada);
   renderLeyTable();
+}
+
+function capturar(){
+  if(!cur.o||!cur.d){alert('Sin datos de precio disponibles. Actualiza primero.');return;}
+  const intl=(cur.o*cur.d)/TROY;
+  const base=intl*leySeleccionada.f,rete=base*cur.ret,neto=base-rete-cur.r;
+  const hora=new Date().toLocaleTimeString('es-CO',{timeZone:'America/Bogota',hour:'2-digit',minute:'2-digit'});
+  snapshot={
+    ley:leySeleccionada.l,
+    onza:cur.o,
+    dolar:cur.d,
+    hora,
+    precios:{
+      puro:       round500(neto*VIT[0].k),
+      monedas22K: round500(neto*VIT[1].k),
+      italiano18K:round500(neto*VIT[2].k),
+      nacional18K:round500(neto*VIT[3].k),
+      blanco18K:  round500(neto*VIT[4].k),
+      kilate14K:  round500(neto*VIT[5].k),
+      tubular:    round500(neto*VIT[6].k),
+      kilate10K:  round500(neto*VIT[7].k),
+    }
+  };
+  congelado=true;
+  // Mostrar panel
+  document.getElementById('snap-info').textContent='Capturado a las '+hora+' · Ley '+snapshot.ley+' · Onza $'+fmtU(cur.o);
+  const grid=document.getElementById('snap-grid');
+  const items=[
+    {n:'Puro',v:snapshot.precios.puro},
+    {n:'Monedas 22K',v:snapshot.precios.monedas22K},
+    {n:'Italiano 18K',v:snapshot.precios.italiano18K},
+    {n:'Nacional 18K',v:snapshot.precios.nacional18K},
+    {n:'Blanco 18K',v:snapshot.precios.blanco18K},
+    {n:'14 Kilates',v:snapshot.precios.kilate14K},
+    {n:'Tubular',v:snapshot.precios.tubular},
+    {n:'10K / Bajos',v:snapshot.precios.kilate10K},
+  ];
+  grid.innerHTML=items.map(it=>`<div class="snap-item"><div class="vl">${it.n}</div><div class="vv">$ ${fmt(it.v)}</div></div>`).join('');
+  document.getElementById('panel-congelado').style.display='block';
+  // Marcar botón capturar como activo
+  const btn=document.getElementById('btn-capturar');
+  btn.classList.add('btn-capturar-activo');
+  btn.setAttribute('data-tip','Congelado — clic para liberar');
+  btn.onclick=liberarCongelado;
+  document.getElementById('panel-congelado').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function liberarCongelado(){
+  congelado=false;
+  snapshot=null;
+  document.getElementById('panel-congelado').style.display='none';
+  const btn=document.getElementById('btn-capturar');
+  btn.classList.remove('btn-capturar-activo');
+  btn.setAttribute('data-tip','Capturar precios para publicar');
+  btn.onclick=capturar;
+  render();
 }
 
 function renderVitrina(l){
@@ -1154,6 +1240,34 @@ async function guardarPrecios(){
 async function guardarMinuto(){
   if(!cur.o||!cur.d) return;
   try{await fetch(API_GUARDAR_MIN,{method:'POST',headers:authHeaders(),body:JSON.stringify({onza:cur.o,dolar:cur.d})});}catch(e){}
+}
+
+async function publicarSitio(){
+  if(!snapshot){alert('Primero captura los precios con el botón ⏸.');return;}
+  const btnPub=document.querySelector('#panel-congelado .btn-gold');
+  const txtOrig=btnPub.textContent;
+  btnPub.disabled=true;
+  btnPub.textContent='Publicando...';
+  try{
+    const res=await fetch(API_PUBLICAR_SITIO,{method:'POST',headers:authHeaders(),body:JSON.stringify({
+      precios:snapshot.precios,
+      ley:snapshot.ley,
+      onza:snapshot.onza,
+      dolar:snapshot.dolar
+    })});
+    if(res.status===401){handleUnauthorized();return;}
+    const data=await res.json();
+    if(data.ok){
+      setBadge('✓ Publicado al sitio','man');
+      setTimeout(()=>{if(cur.o&&cur.d)setBadge('En vivo','live');},5000);
+      liberarCongelado();
+    }
+  }catch(e){
+    setBadge('Error al publicar','err');
+    setTimeout(()=>{if(cur.o&&cur.d)setBadge('En vivo','live');},3000);
+    btnPub.textContent=txtOrig;
+    btnPub.disabled=false;
+  }
 }
 
 // ── fetchAll ──────────────────────────────────────────────────────────────────
