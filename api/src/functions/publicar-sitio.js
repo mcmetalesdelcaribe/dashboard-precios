@@ -37,29 +37,29 @@ app.http('publicar-sitio', {
             if (!precios || typeof precios !== 'object') throw new Error('Faltan datos de precios');
 
             const ahora = new Date();
+            context.log(`publicar-sitio: ley=${ley} puro=${precios.puro} onza=${onza} dolar=${dolar}`);
             const client = TableClient.fromConnectionString(CONNECTION, TABLE);
-            await client.createTable().catch(() => {});
+            try { await client.createTable(); } catch (_) {}
 
             // Upsert con clave fija — sobreescribe siempre el último precio publicado
             await client.upsertEntity({
                 partitionKey: 'precio',
                 rowKey: 'publicado',
                 // Precios por kilate (ya redondeados al 500 más cercano)
-                puro:        precios.puro        ?? 0,
-                monedas22K:  precios.monedas22K  ?? 0,
-                italiano18K: precios.italiano18K ?? 0,
-                nacional18K: precios.nacional18K ?? 0,
-                blanco18K:   precios.blanco18K   ?? 0,
-                kilate14K:   precios.kilate14K   ?? 0,
-                tubular:     precios.tubular     ?? 0,
-                kilate10K:   precios.kilate10K   ?? 0,
+                puro:        Number(precios.puro        ?? 0),
+                monedas22K:  Number(precios.monedas22K  ?? 0),
+                italiano18K: Number(precios.italiano18K ?? 0),
+                nacional18K: Number(precios.nacional18K ?? 0),
+                blanco18K:   Number(precios.blanco18K   ?? 0),
+                kilate14K:   Number(precios.kilate14K   ?? 0),
+                tubular:     Number(precios.tubular     ?? 0),
+                kilate10K:   Number(precios.kilate10K   ?? 0),
                 // Metadata
-                ley:         ley    ?? '',
-                onza:        onza   ?? 0,
-                dolar:       dolar  ?? 0,
-                timestamp:   ahora.toISOString(),
-                publicadoEn: ahora.toLocaleString('es-CO', { timeZone: 'America/Bogota' })
-            }, 'Replace');
+                ley:         String(ley    ?? ''),
+                onza:        Number(onza   ?? 0),
+                dolar:       Number(dolar  ?? 0),
+                publicadoEn: ahora.toISOString()
+            }, 'Merge');
 
             context.log(`Precios publicados al sitio: ley=${ley}, puro=${precios.puro}`);
 

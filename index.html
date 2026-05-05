@@ -1289,40 +1289,47 @@ async function publicarSitio(){
     liberarCongelado();
   }catch(e){
     setBadge('Error al publicar','err');
-    setTimeout(()=>{if(cur.o&&cur.d)setBadge('En vivo','live');},4000);
+    setSbar('Error al publicar: '+e.message+' — '+new Date().toLocaleTimeString('es-CO'));
+    setTimeout(()=>{if(cur.o&&cur.d)setBadge('En vivo','live');},6000);
     btnPub.textContent=txtOrig;
     btnPub.disabled=false;
   }
 }
 
 // ── Buscar precio histórico ───────────────────────────────────────────────────
+function horaToMin(h){ const p=(h||'').split(':'); return parseInt(p[0],10)*60+(parseInt(p[1],10)||0); }
+
 async function buscarPrecioHistorico(){
   const fechaEl=document.getElementById('hist-buscar-fecha');
   const horaEl=document.getElementById('hist-buscar-hora');
   const statusEl=document.getElementById('hist-buscar-status');
   const btn=document.getElementById('btn-buscar-hist');
   if(!fechaEl.value||!horaEl.value){statusEl.textContent='Elige fecha y hora.';return;}
-  const targetMs=new Date(fechaEl.value+'T'+horaEl.value+':00').getTime();
-  const ahoraMs=Date.now();
-  if(targetMs>=ahoraMs){statusEl.textContent='La hora debe ser anterior a ahora.';return;}
-  const minutos=Math.ceil((ahoraMs-targetMs)/60000)+2; // buffer de 2 min
-  if(minutos>2880){statusEl.textContent='Máximo 48 h de historial.';return;}
+  const targetDate=fechaEl.value;   // "2026-05-05" (fecha UTC del registro)
+  const targetMin=horaToMin(horaEl.value); // minutos desde medianoche en hora colombiana
   btn.disabled=true;
   statusEl.textContent='Buscando...';
   try{
-    const res=await fetch(API_HIST_MIN+'?minutos='+minutos,{headers:authHeaders()});
-    if(res.status===401){handleUnauthorized();return;}
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    const registros=data.registros||[];
-    if(!registros.length){statusEl.textContent='Sin datos en ese rango.';return;}
-    // Registro más cercano a targetMs
-    const mejor=registros.reduce((a,b)=>
-      Math.abs(new Date(b.timestamp).getTime()-targetMs)<Math.abs(new Date(a.timestamp).getTime()-targetMs)?b:a
+    // Reusar todosRegistros si el historial ya fue cargado; si no, fetch fresco
+    let registros=todosRegistros;
+    if(!registros.length){
+      const res=await fetch(API_HISTORIAL,{headers:authHeaders()});
+      if(res.status===401){handleUnauthorized();return;}
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data=await res.json();
+      registros=data.registros||[];
+      todosRegistros=registros;
+    }
+    // Filtrar por fecha (r.timestamp es ISO UTC; primeros 10 chars = fecha UTC)
+    const delDia=registros.filter(r=>r.timestamp&&r.timestamp.slice(0,10)===targetDate);
+    if(!delDia.length){statusEl.textContent='Sin registros para esa fecha. Abre el Historial primero para cargar los datos.';return;}
+    // Encontrar registro más cercano a la hora objetivo (r.hora en hora colombiana "HH:MM:SS")
+    const mejor=delDia.reduce((a,b)=>
+      Math.abs(horaToMin(b.hora)-targetMin)<Math.abs(horaToMin(a.hora)-targetMin)?b:a
     );
     const histOnza=mejor.onza;
     const histDolar=mejor.dolar;
-    const horaStr=new Date(mejor.timestamp).toLocaleTimeString('es-CO',{timeZone:'America/Bogota',hour:'2-digit',minute:'2-digit'});
+    const horaStr=mejor.hora.slice(0,5); // "09:05"
     // Calcular precios con datos históricos + ley seleccionada actual
     const intl=(histOnza*histDolar)/TROY;
     const base=intl*leySeleccionada.f,rete=base*cur.ret,neto=base-rete-cur.r;
@@ -1344,7 +1351,7 @@ async function buscarPrecioHistorico(){
     };
     congelado=true;
     document.getElementById('snap-info').textContent=
-      'Histórico '+horaStr+' · Ley '+snapshot.ley+' · Onza $'+fmtU(histOnza)+' · Dólar $'+fmt(histDolar);
+      'Histórico '+horaStr+' ('+targetDate+') · Ley '+snapshot.ley+' · Onza $'+fmtU(histOnza)+' · Dólar $'+fmt(histDolar);
     const grid=document.getElementById('snap-grid');
     const items=[
       {n:'Puro',v:snapshot.precios.puro},
@@ -1365,7 +1372,7 @@ async function buscarPrecioHistorico(){
     document.getElementById('panel-congelado').scrollIntoView({behavior:'smooth',block:'nearest'});
     statusEl.textContent='';
   }catch(e){
-    statusEl.textContent='Error al buscar datos históricos.';
+    statusEl.textContent='Error: '+e.message;
   }finally{
     btn.disabled=false;
   }

@@ -37,7 +37,7 @@ app.http('precio-publicado', {
                         kilate10K:   e.kilate10K,
                     },
                     ley:         e.ley,
-                    timestamp:   e.timestamp,
+                    timestamp:   e.publicadoEn || e.timestamp,
                     publicadoEn: e.publicadoEn
                 })
             };
